@@ -1,0 +1,92 @@
+[
+  {
+    "path": "dashboard",
+    "links": [
+      {
+        "title": "Home",
+        "link": "/dashboard/home",
+        "icon": ["fas", "home"]
+      },
+      {
+        "title": "Pagos",
+        "link": "/pagos",
+        "icon": ["fas", "money-bill-wave"]
+      },
+      {
+        "title": "Vecinos",
+        "link": "/vecinos",
+        "icon": ["fas", "users"]
+      },
+      {
+        "title": "Cuotas",
+        "link": "/cuotas",
+        "icon": ["fas", "file-invoice-dollar"]
+      },
+      {
+        "title": "Hojas de calculo",
+        "link": "/hojas-calculo",
+        "icon": ["fas", "file-excel"]
+      }
+    ]
+  },
+  {
+    "path": "pagos",
+    "links": [
+      {
+        "title": "Consultar pagos",
+        "link": "/pagos",
+        "icon": ["fas", "home"]
+      },
+      {
+        "title": "Registrar Pago",
+        "link": "/pagos/crear",
+        "icon": ["fas", "money-bill-wave"]
+      }
+    ]
+  },
+  {
+    "path": "vecinos",
+    "links": [
+      {
+        "title": "Registrar vecino",
+        "link": "/vecinos/crear",
+        "icon": ["fas", "home"]
+      },
+      {
+        "title": "Consultar vecinos",
+        "link": "/vecinos",
+        "icon": ["fas", "money-bill-wave"]
+      }
+    ]
+  },
+  {
+    "path": "hojas-calculo",
+    "links": [
+      {
+        "title": "Importar hojas de calculo",
+        "link": "/hojas-calculo/importar",
+        "icon": ["fas", "home"]
+      },
+      {
+        "title": "Exportar hojas de calculo",
+        "link": "/hojas-calculo/exportar",
+        "icon": ["fas", "money-bill-wave"]
+      }
+    ]
+  },
+  {
+    "path": "cuotas",
+    "links": [
+      {
+        "title": "Consultar cuotas",
+        "link": "/cuotas",
+        "icon": ["fas", "home"]
+      },
+      {
+        "title": "Crear cuotas",
+        "link": "/cuotas/crear",
+        "icon": ["fas", "money-bill-wave"]
+      }
+    ]
+  }
+]

@@ -30,7 +30,12 @@ import {
   faStream,
   faBook,
   faUserCircle,
-  faAsterisk
+  faAsterisk,
+  faHome,
+  faUsers,
+  faMoneyBillWave,
+  faFileInvoiceDollar,
+  faFileExcel
 } from '@fortawesome/free-solid-svg-icons';
 import { faMediumM, faGithub } from '@fortawesome/free-brands-svg-icons';
 
@@ -86,7 +91,12 @@ export class SharedModule {
       faStream,
       faBook,
       faUserCircle,
-      faAsterisk
+      faAsterisk,
+      faHome,
+      faUsers,
+      faMoneyBillWave,
+      faFileInvoiceDollar,
+      faFileExcel
     );
   }
 }

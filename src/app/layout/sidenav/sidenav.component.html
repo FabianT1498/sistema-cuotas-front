@@ -1,0 +1,21 @@
+<mat-sidenav-container autosize>
+  <mat-sidenav mode="side" role="navigation" [(opened)]="isOpen">
+    <ng-container **ngIf="(items$ | async) as items">
+      <mat-nav-list>
+        <a *ngFor="let item of items"
+        mat-list-item
+        [routerLink]="[item.link]"
+        routerLinkActive="list-item-active"
+        >
+          <fa-icon [icon]="[item.icon[0], item.icon[1]]"></fa-icon>
+          {{item.title}}
+        </a>
+      </mat-nav-list>      
+    </ng-container>     
+  </mat-sidenav>
+  <mat-sidenav-content role="main">
+    <div class="container">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

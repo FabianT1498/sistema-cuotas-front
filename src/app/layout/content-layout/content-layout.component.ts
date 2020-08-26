@@ -13,6 +13,8 @@ export class ContentLayoutComponent implements OnInit {
 
   overlayContainer: OverlayContainer;
 
+  isSidenavOpen: Boolean;
+
   constructor(private themeService: ThemeService) {}
 
   ngOnInit(): void {
@@ -40,5 +42,9 @@ export class ContentLayoutComponent implements OnInit {
         })
       )
       .subscribe();
+  }
+
+  receiveSidenavState($event) {
+    this.isSidenavOpen = $event;
   }
 }

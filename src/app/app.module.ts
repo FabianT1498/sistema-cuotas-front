@@ -10,9 +10,8 @@ import { AppRoutingModule } from './app-routing.module';
 import { ContentLayoutComponent } from './layout/content-layout/content-layout.component';
 import { NavComponent } from './layout/nav/nav.component';
 import { FooterComponent } from './layout/footer/footer.component';
+import { SidenavComponent } from './layout/sidenav/sidenav.component';
 
-import { AuthModule } from '@modules/auth/auth.module';
-import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
@@ -21,14 +20,14 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     ContentLayoutComponent,
     NavComponent,
     FooterComponent,
-    AuthLayoutComponent
+    SidenavComponent
   ],
   imports: [
     // angular
     BrowserModule,
 
     // 3rd party
-    AuthModule,
+    // AuthModule,
 
     // core & shared
     CoreModule,
@@ -42,4 +41,4 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
   providers: [],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}
