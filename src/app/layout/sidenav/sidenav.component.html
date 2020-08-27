@@ -1,6 +1,6 @@
 <mat-sidenav-container autosize>
   <mat-sidenav mode="side" role="navigation" [(opened)]="isOpen">
-    <ng-container **ngIf="(items$ | async) as items">
+    <ng-container *ngIf="(items$ | async) as items">
       <mat-nav-list>
         <a *ngFor="let item of items"
         mat-list-item

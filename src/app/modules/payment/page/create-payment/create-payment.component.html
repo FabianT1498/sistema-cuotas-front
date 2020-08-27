@@ -1,26 +1,32 @@
 <fieldset [disabled]="isLoading">
-  <form (ngSubmit)="createPayment()" [formGroup]="PaymentForm">
+  <form (ngSubmit)="createPayment()" [formGroup]="paymentForm">
       <h2 class="secondary-heading">Datos de vecino</h2>
       <div class="form-group">
         <label class="d-block">
-          <input type="text" class="form-control" [placeholder]="'Username'" formControlName="username">
-          <app-control-messages [control]="f['username']"></app-control-messages>
+          <input type="text" class="form-control" [placeholder]="'Vecino'" formControlName="vecino">
+          <app-control-messages [control]="f['vecino']"></app-control-messages>
         </label>
       </div>
       <div class="form-group">
         <label class="d-block">
-          <input type="password" class="form-control" [placeholder]="'Password'" formControlName="password">
-          <app-control-messages [control]="f['password']"></app-control-messages>
+          <input type="text" class="form-control" [placeholder]="'Cedula'" formControlName="cedula">
+          <app-control-messages [control]="f['cedula']"></app-control-messages>
         </label>
       </div>
+      <h2 class="secondary-heading">Datos del pago</h2>
+      <mat-form-field appearance="fill">
+        <mat-label>Choose a date</mat-label>
+        <input matInput [matDatepicker]="picker" class="form-control" formControlName="fechaPago">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
       <div class="form-group">
-        <button type="submit" class="btn btn-primary btn-block btn-raised" type="submit" [disabled]="loginForm.invalid">
+        <button type="submit" class="btn btn-primary btn-block btn-raised" type="submit" [disabled]="paymentForm.invalid">
           <span [hidden]="isLoading">Submit</span>
           <span [hidden]="!isLoading">
             <fa-icon icon="asterisk" size="3x" [spin]="true"></fa-icon>
           </span>
         </button>
       </div>
-      <a [routerLink]="['/auth/register']">Don't have an account? Sign up here!</a>
   </form>
 </fieldset>

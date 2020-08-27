@@ -14,7 +14,7 @@ import { AuthService } from '@app/service/auth.service';
 export class CreatePaymentComponent implements OnInit {
   error: string;
   isLoading: boolean;
-  Form: FormGroup;
+  paymentForm: FormGroup;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -27,29 +27,19 @@ export class CreatePaymentComponent implements OnInit {
   ngOnInit() {}
 
   get f() {
-    return this.loginForm.controls;
+    return this.paymentForm.controls;
   }
 
-  login() {
+  createPayment() {
     this.isLoading = true;
-
-    const credentials = this.loginForm.value;
-
-    this.authService
-      .login(credentials)
-      .pipe(
-        delay(1500),
-        tap(user => this.router.navigate(['/dashboard/home'])),
-        finalize(() => (this.isLoading = false)),
-        catchError(error => of((this.error = error)))
-      )
-      .subscribe();
+    console.log('crear pago');
   }
 
   private buildForm(): void {
-    this.loginForm = this.formBuilder.group({
-      username: ['', Validators.required],
-      password: ['', Validators.required]
+    this.paymentForm = this.formBuilder.group({
+      vecino: ['', Validators.required],
+      cedula: ['', Validators.required],
+      fechaPago: ['', Validators.required]
     });
   }
 }
