@@ -10,16 +10,17 @@ import { tap } from 'rxjs/operators';
 })
 export class ContentLayoutComponent implements OnInit {
   public theme = 'my-light-theme';
-
-  overlayContainer: OverlayContainer;
-
   isSidenavOpen: Boolean;
 
-  constructor(private themeService: ThemeService) {}
+  constructor(
+    private themeService: ThemeService,
+    private overlayContainer: OverlayContainer
+  ) {}
 
   ngOnInit(): void {
     if (this.overlayContainer) {
       this.overlayContainer.getContainerElement().classList.add(this.theme);
+      console.log('Overlay container is instantcialized');
     }
 
     this.themeService
@@ -29,6 +30,7 @@ export class ContentLayoutComponent implements OnInit {
           this.theme = isDarkTheme ? 'my-dark-theme' : 'my-light-theme';
 
           if (this.overlayContainer) {
+            console.log('Overlay container is instantcialized');
             const overlayContainerClasses = this.overlayContainer.getContainerElement()
               .classList;
             const themeClassesToRemove = Array.from(
