@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   FormGroup,
@@ -13,7 +13,8 @@ import { Observable } from 'rxjs';
 @Component({
   selector: 'app-create-payment',
   templateUrl: './create-payment.component.html',
-  styleUrls: ['./create-payment.component.scss']
+  styleUrls: ['./create-payment.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class CreatePaymentComponent implements OnInit {
   isLoading: boolean;
@@ -35,6 +36,23 @@ export class CreatePaymentComponent implements OnInit {
     );
   }
 
+  private buildForm(): void {
+    this.paymentForm = this.formBuilder.group({
+      neighbor: ['', Validators.required],
+      neighborID: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern('^[0-9]+$'),
+          Validators.maxLength(8)
+        ]
+      ],
+      paymentDate: ['', Validators.required],
+      paymentMethod: ['', Validators.required],
+      amount: [0, [Validators.required, Validators.min(0)]]
+    });
+  }
+
   get f() {
     return this.paymentForm.controls;
   }
@@ -49,7 +67,7 @@ export class CreatePaymentComponent implements OnInit {
 
   createPayment() {
     this.isLoading = true;
-    console.log('crear pago');
+    console.log('pago creado');
   }
 
   onChange($event) {
@@ -60,7 +78,10 @@ export class CreatePaymentComponent implements OnInit {
       );
       this.paymentForm.addControl(
         'paymentID',
-        new FormControl('', [Validators.required, Validators.pattern('/^d+$/')])
+        new FormControl('', [
+          Validators.required,
+          Validators.pattern('^([0-9]|[A-Z]|[a-z])+$')
+        ])
       );
       this.banks$ = this.selectOptionsService.getOptions('banks');
     } else {
@@ -69,20 +90,22 @@ export class CreatePaymentComponent implements OnInit {
     }
   }
 
-  private buildForm(): void {
-    this.paymentForm = this.formBuilder.group({
-      neighbor: ['', Validators.required],
-      neighborID: ['', Validators.required],
-      paymentDate: ['', Validators.required],
-      paymentMethod: ['', Validators.required],
-      amount: [
-        '',
-        [
-          Validators.required,
-          Validators.min(0),
-          Validators.pattern('/^d*(.d+)?$/')
-        ]
-      ]
-    });
+  onClear() {
+    const formKeys = {
+      neighbor: '',
+      neighborID: '',
+      paymentDate: '',
+      paymentMethod: '',
+      amount: 0
+    };
+
+    console.log(`isElectronicPayment es ${this.isElectronicPayment}`);
+
+    if (this.isElectronicPayment) {
+      this.paymentForm.removeControl('bank');
+      this.paymentForm.removeControl('paymentID');
+    }
+
+    this.paymentForm.reset(formKeys);
   }
 }
