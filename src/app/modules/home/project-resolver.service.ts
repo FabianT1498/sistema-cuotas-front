@@ -1,4 +1,4 @@
-import { Injectable, } from '@angular/core';
+/* import { Injectable, } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, Router, RouterStateSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -24,3 +24,4 @@ export class ProjectResolver implements Resolve<Project> {
       .pipe(catchError((err) => this.router.navigateByUrl('/')));
   }
 }
+ */

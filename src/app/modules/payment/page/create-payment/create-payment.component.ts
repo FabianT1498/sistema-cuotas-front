@@ -10,6 +10,9 @@ import {
 import { SelectOptionsService } from '@app/service/select-options.service';
 import { Observable } from 'rxjs';
 
+import {NeighborService} from '@data/service/neightbor.service'
+import { Neighbor } from '@data/schema/neighbor';
+
 @Component({
   selector: 'app-create-payment',
   templateUrl: './create-payment.component.html',
@@ -19,21 +22,23 @@ import { Observable } from 'rxjs';
 export class CreatePaymentComponent implements OnInit {
   isLoading: boolean;
   paymentForm: FormGroup;
+  neighborSelected: Neighbor;
   banks$: Observable<Array<String>>;
   paymentMethods$: Observable<Array<String>>;
+  neighbors$ : Observable<Neighbor[]>
 
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
-    private selectOptionsService: SelectOptionsService
+    private selectOptionsService: SelectOptionsService,
+    private neighborService: NeighborService
   ) {
-    this.buildForm();
   }
 
   ngOnInit() {
-    this.paymentMethods$ = this.selectOptionsService.getOptions(
-      'paymentMethods'
-    );
+    this.buildForm();
+    this.paymentMethods$ = this.selectOptionsService.getOptions('paymentMethods');
+    this.neighbors$ = this.neighborService.getNeighbors();
   }
 
   private buildForm(): void {
@@ -107,5 +112,14 @@ export class CreatePaymentComponent implements OnInit {
     }
 
     this.paymentForm.reset(formKeys);
+  }
+  
+  neighborOptionSelected($event) {
+    this.neighborSelected = $event.option.value;
+    this.paymentForm.controls['neighborID'].setValue(this.neighborSelected.neighborID)
+  }
+
+  displayNeighborName(neighbor){
+    return neighbor ? neighbor.fullName : null;
   }
 }

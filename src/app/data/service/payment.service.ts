@@ -8,7 +8,7 @@ import { Payment } from '../schema/payment';
 @Injectable({
   providedIn: 'root'
 })
-export class ProjectService {
+export class PaymentService {
   private paymentsUrl = 'api/payments'; // URL to web api
 
   constructor(private http: HttpClient) {}

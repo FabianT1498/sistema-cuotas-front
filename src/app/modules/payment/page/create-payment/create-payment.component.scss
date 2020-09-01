@@ -30,3 +30,10 @@
     }
   }
 }
+
+.center {
+  padding-top: 2rem;
+  & > .mat-spinner{
+    margin: 0 auto;
+  }
+}

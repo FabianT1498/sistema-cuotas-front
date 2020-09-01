@@ -40,6 +40,6 @@
   },
   {
     "select": "paymentMethods",
-    "options": ["Efectivo", "Pago móvil", "Transferencia"]
+    "options": ["Efectivo", "Pago movil", "Transferencia"]
   }
 ]

@@ -16,7 +16,7 @@ import { SidenavComponent } from './layout/sidenav/sidenav.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { HttpClientInMemoryWebApiModule } from 'angular-in-memory-web-api';
-import { InMemoryDataService } from './in-memory-data.service';
+import { InMemoryDataService } from '@data/service/in-memory-data.service.ts';
 
 @NgModule({
   declarations: [

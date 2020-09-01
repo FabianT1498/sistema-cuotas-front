@@ -2,8 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
-import { ProjectService } from '@data/service/project.service';
-import { Project } from '@data/schema/project';
+
 import { MyModalComponent } from '../modal/my-modal.component';
 
 @Component({
@@ -12,11 +11,9 @@ import { MyModalComponent } from '../modal/my-modal.component';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit {
-  projects$: Observable<Project[]> = this.projectService.getAll();
-
+  
   constructor(
     private modalService: NgbModal,
-    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {}
