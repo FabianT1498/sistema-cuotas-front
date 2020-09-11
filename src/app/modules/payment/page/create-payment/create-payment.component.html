@@ -5,23 +5,22 @@
         <div class="start-mat-grid-list">
           <mat-grid-tile>
             <div class="form-controls-container">
-              <h2 class="secondary-heading">Datos de vecino</h2>
-              
+              <h2 class="secondary-heading">Datos de vecino</h2>          
                 <mat-form-field>
-                  <input matInput [placeholder]="'Vecino'" formControlName="neighbor" [matAutocomplete]="auto" required>
+                  <input matInput [placeholder]="'Vecino'" formControlName="neighbor" [matAutocomplete]="auto" (change)="neighborInputChange($event)" required>
                   <mat-autocomplete autoActiveFirstOption [displayWith]="displayNeighborName" (optionSelected)="neighborOptionSelected($event)" #auto="matAutocomplete">
-                    <mat-option *ngFor="let neighbor of neighbors" [value]="neighbor">
+                    <mat-option *ngFor="let neighbor of filteredNeighbors$ | async" [value]="neighbor">
                       {{neighbor.fullName}}
                     </mat-option>
                   </mat-autocomplete>
-                  <app-control-messages [control]="f['neighbor']"></app-control-messages>
+                  <app-control-messages [control]="f['neighbor']"></app-control-messages>        
                 </mat-form-field>
                 <mat-form-field>
                   <input matInput readonly="true" [placeholder]="'Cedula'" formControlName="neighborID" required>
                   <app-control-messages [control]="f['neighborID']"></app-control-messages>
                 </mat-form-field>
             </div>
-          </mat-grid-tile>
+          </mat-grid-tile>    
           <mat-grid-tile>
             <div class="form-controls-container"> 
               <h2 class="secondary-heading">Datos del pago</h2>
@@ -34,9 +33,9 @@
               </mat-form-field>
               <mat-form-field appearance="fill">
                 <mat-label>Tipo de pago</mat-label>
-                <select matNativeControl (change)="onChange($event)" formControlName="paymentMethod" required>
+                <select matNativeControl (change)="paymentMethodChange($event)" formControlName="paymentMethod" required>
                   <option 
-                    *ngFor="let method of paymentMethods$ | async" 
+                    *ngFor="let method of paymentMethods" 
                     [value]="method" 
                   >
                     {{method}}
@@ -53,7 +52,7 @@
                       </option>
                   </select>
                   <app-control-messages [control]="f['bank']"></app-control-messages>   
-                </mat-form-field>
+                </mat-form-field>  
                 <mat-form-field>
                   <input matInput [placeholder]="'Numero de referencia'" formControlName="paymentID" required>
                   <app-control-messages [control]="f['paymentID']"></app-control-messages>
@@ -68,7 +67,17 @@
                 <button mat-raised-button color="warn" type="button" (click)="onClear()">Clear</button>
               </div>
             </div>
-          </mat-grid-tile>
+          </mat-grid-tile>      
+          <mat-grid-tile *ngIf="(monthlyPayments$ | async) as monthlyPayments">
+            <div class="form-controls-container">
+              <h2 class="secondary-heading">Mensualidades a pagar</h2>
+              <mat-selection-list >
+                <mat-list-option *ngFor="let monthlyPayment of monthlyPayments">
+                  {{monthlyPayment.month}} {{monthlyPayment.year}}
+                </mat-list-option>
+              </mat-selection-list>
+            </div>
+          </mat-grid-tile>   
         </div>
       </mat-grid-list>
     </form>

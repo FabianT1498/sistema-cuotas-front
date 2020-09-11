@@ -16,7 +16,6 @@
   padding-top: 2rem;
 
   & > .mat-grid-tile .mat-figure {
-    justify-content: flex-start;
     align-items: flex-start;
   }
 }
@@ -33,7 +32,7 @@
 
 .center {
   padding-top: 2rem;
-  & > .mat-spinner{
+  & > .mat-spinner {
     margin: 0 auto;
   }
 }

@@ -4,20 +4,22 @@ import { catchError, filter, tap } from 'rxjs/operators';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
-import { Neighbor } from '../schema/neighbor';
+import { MonthlyPayment } from '../schema/monthly-payment';
 
 @Injectable({
   providedIn: 'root'
 })
-export class NeighborService {
-  private neighborsUrl = 'api/neighbors'; // URL to web api
+export class MonthlyPaymentService {
+  private url = 'api/monthlyPayments'; // URL to web api
 
   constructor(private http: HttpClient) {}
 
-  getNeighbors(): Observable<Neighbor[]> {
+  getMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {
     return this.http
-      .get<Neighbor[]>(this.neighborsUrl)
-      .pipe(catchError(this.handleError<Neighbor[]>('getNeighbors', [])));
+      .get<MonthlyPayment[]>(`${this.url}/?neighborID=${neighborID}`)
+      .pipe(
+        catchError(this.handleError<MonthlyPayment[]>('getMonthlyPayments', []))
+      );
   }
 
   private handleError<T>(operation = 'operation', result?: T) {

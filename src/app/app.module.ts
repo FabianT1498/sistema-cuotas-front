@@ -34,7 +34,8 @@ import { InMemoryDataService } from '@data/service/in-memory-data.service.ts';
     // 3rd party
     // AuthModule,
     HttpClientInMemoryWebApiModule.forRoot(InMemoryDataService, {
-      dataEncapsulation: false
+      dataEncapsulation: false,
+      delay: 5000
     }),
 
     // core & shared

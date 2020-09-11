@@ -7,10 +7,14 @@ import {
   FormControl
 } from '@angular/forms';
 
-import { SelectOptionsService } from '@app/service/select-options.service';
-import { Observable } from 'rxjs';
+import { map, startWith, takeUntil } from 'rxjs/operators';
+import { combineLatest, Observable, EMPTY } from 'rxjs';
 
-import {NeighborService} from '@data/service/neightbor.service'
+import { SelectOptionsService } from '@app/service/select-options.service';
+import { NeighborService } from '@data/service/neightbor.service';
+import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
+
+import { MonthlyPayment } from '@data/schema/monthly-payment';
 import { Neighbor } from '@data/schema/neighbor';
 
 @Component({
@@ -22,23 +26,53 @@ import { Neighbor } from '@data/schema/neighbor';
 export class CreatePaymentComponent implements OnInit {
   isLoading: boolean;
   paymentForm: FormGroup;
-  neighborSelected: Neighbor;
+  paymentMethods: Array<String>;
+
   banks$: Observable<Array<String>>;
-  paymentMethods$: Observable<Array<String>>;
-  neighbors$ : Observable<Neighbor[]>
+  neighbors$: Observable<Neighbor[]>;
+  filteredNeighbors$: Observable<Neighbor[]>;
+  neighborFilter$: Observable<string>;
+  monthlyPayments$: Observable<MonthlyPayment[]>;
 
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
     private selectOptionsService: SelectOptionsService,
-    private neighborService: NeighborService
+    private neighborService: NeighborService,
+    private monthlyPaymentService: MonthlyPaymentService
   ) {
+    this.paymentMethods = Array('Efectivo', 'Pago movil', 'Transferencia');
   }
 
   ngOnInit() {
     this.buildForm();
-    this.paymentMethods$ = this.selectOptionsService.getOptions('paymentMethods');
+    this.loadInitialData();
+    this.setupFormListeners();
+  }
+
+  private loadInitialData() {
     this.neighbors$ = this.neighborService.getNeighbors();
+  }
+
+  private setupFormListeners() {
+    this.neighborFilter$ = this.paymentForm.get('neighbor').valueChanges.pipe(
+      startWith(''),
+      map(value => (typeof value === 'string' ? value : value.fullName))
+    );
+
+    this.filteredNeighbors$ = combineLatest(
+      this.neighbors$,
+      this.neighborFilter$
+    ).pipe(
+      map(([neighbors, filterString]) =>
+        neighbors.filter(
+          neighbor =>
+            neighbor.fullName
+              .toLowerCase()
+              .indexOf(filterString.toLowerCase()) !== -1
+        )
+      )
+    );
   }
 
   private buildForm(): void {
@@ -62,20 +96,32 @@ export class CreatePaymentComponent implements OnInit {
     return this.paymentForm.controls;
   }
 
+  neighborInputChange($event) {
+    this.paymentForm.get('neighborID').setValue('');
+    this.monthlyPayments$ = EMPTY;
+  }
+
+  neighborOptionSelected($event) {
+    const neighborID = $event.option.value.neighborID;
+    this.paymentForm.get('neighborID').setValue(neighborID);
+    this.monthlyPayments$ = this.monthlyPaymentService.getMonthlyPayments(
+      neighborID
+    );
+  }
+
+  displayNeighborName(neighbor) {
+    return neighbor && neighbor.fullName ? neighbor.fullName : '';
+  }
+
   get isElectronicPayment(): boolean {
-    const paymentMethod = this.paymentForm.controls['paymentMethod']
-      ? this.paymentForm.controls['paymentMethod'].value
+    const paymentMethod = this.paymentForm.get('paymentMethod')
+      ? this.paymentForm.get('paymentMethod').value
       : '';
 
-    return paymentMethod !== '' && paymentMethod !== 'Efectivo' ? true : false;
+    return paymentMethod !== '' && paymentMethod !== this.paymentMethods[0];
   }
 
-  createPayment() {
-    this.isLoading = true;
-    console.log('pago creado');
-  }
-
-  onChange($event) {
+  paymentMethodChange($event) {
     if (this.isElectronicPayment) {
       this.paymentForm.addControl(
         'bank',
@@ -104,8 +150,6 @@ export class CreatePaymentComponent implements OnInit {
       amount: 0
     };
 
-    console.log(`isElectronicPayment es ${this.isElectronicPayment}`);
-
     if (this.isElectronicPayment) {
       this.paymentForm.removeControl('bank');
       this.paymentForm.removeControl('paymentID');
@@ -113,13 +157,9 @@ export class CreatePaymentComponent implements OnInit {
 
     this.paymentForm.reset(formKeys);
   }
-  
-  neighborOptionSelected($event) {
-    this.neighborSelected = $event.option.value;
-    this.paymentForm.controls['neighborID'].setValue(this.neighborSelected.neighborID)
-  }
 
-  displayNeighborName(neighbor){
-    return neighbor ? neighbor.fullName : null;
+  createPayment() {
+    this.isLoading = true;
+    console.log('pago creado');
   }
 }

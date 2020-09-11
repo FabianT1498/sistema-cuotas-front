@@ -37,9 +37,5 @@
       "Banco Provincial",
       "Banco Sofitasa"
     ]
-  },
-  {
-    "select": "paymentMethods",
-    "options": ["Efectivo", "Pago movil", "Transferencia"]
   }
 ]
