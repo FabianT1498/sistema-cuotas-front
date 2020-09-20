@@ -6,29 +6,41 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 import { MonthlyPayment } from '../schema/monthly-payment';
 
+import { handleError } from './handleError';
+
 @Injectable({
   providedIn: 'root'
 })
 export class MonthlyPaymentService {
-  private url = 'api/monthlyPayments'; // URL to web api
+  private monthlyPaymentUrl = 'api/monthlyPayments'; // URL to web api
 
   constructor(private http: HttpClient) {}
 
-  getMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {
+  getAll(): Observable<MonthlyPayment[]> {
     return this.http
-      .get<MonthlyPayment[]>(`${this.url}/?neighborID=${neighborID}`)
+      .get<MonthlyPayment[]>(this.monthlyPaymentUrl)
+      .pipe(catchError(handleError<MonthlyPayment[]>('getAll', [])));
+  }
+
+  getUnpaidMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {
+    return this.http
+      .get<MonthlyPayment[]>(
+        `${this.monthlyPaymentUrl}/?neighborID=${neighborID}`
+      )
       .pipe(
-        catchError(this.handleError<MonthlyPayment[]>('getMonthlyPayments', []))
+        catchError(
+          handleError<MonthlyPayment[]>('getUnpaidMonthlyPayments', [])
+        )
       );
   }
 
-  private handleError<T>(operation = 'operation', result?: T) {
-    return (error: any): Observable<T> => {
-      // TODO: send the error to remote logging infrastructure
-      console.error(error); // log to console instead
-
-      // Let the app keep running by returning an empty result.
-      return of(result as T);
-    };
+  getPaidMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {
+    return this.http
+      .get<MonthlyPayment[]>(
+        `${this.monthlyPaymentUrl}/?neighborID=${neighborID}`
+      )
+      .pipe(
+        catchError(handleError<MonthlyPayment[]>('getPaidMonthlyPayments', []))
+      );
   }
 }

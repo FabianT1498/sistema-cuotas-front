@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 
-//import { Project } from '@data/schema/project';
+// import { Project } from '@data/schema/project';
 
 @Component({
   selector: 'app-project-item',
@@ -8,7 +8,7 @@ import { Component, Input } from '@angular/core';
   styleUrls: ['./project-item.component.scss']
 })
 export class ProjectItemComponent {
-  //@Input() project: Project;
+  // @Input() project: Project;
 
   flipped = false;
 }

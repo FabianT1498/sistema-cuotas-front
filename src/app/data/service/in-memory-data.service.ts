@@ -49,59 +49,39 @@ export class InMemoryDataService implements InMemoryDbService {
     const monthlyPayments = [
       {
         id: 0,
-        neighborID: '26382781',
         month: 'Jan',
         year: 2019,
         cost: 200000
       },
       {
         id: 1,
-        neighborID: '26382781',
         month: 'Feb',
         year: 2019,
         cost: 200000
+      },
+      {
+        id: 2,
+        month: 'Mar',
+        year: 2019,
+        cost: 500000
       },
       {
         id: 3,
         month: 'Jan',
-        neighborID: '26382781',
         year: 2020,
-        cost: 500000
+        cost: 1000000
       },
       {
         id: 4,
-        neighborID: '26382783',
-        month: 'Feb',
-        year: 2020,
-        cost: 500000
-      },
-      {
-        id: 5,
         month: 'Mar',
-        neighborID: '26382783',
         year: 2020,
         cost: 700000
       },
       {
-        id: 6,
-        neighborID: '26382784',
-        month: 'Jan',
-        year: 2019,
-        cost: 200000
-      },
-      {
-        id: 7,
-        neighborID: '26382784',
-        month: 'Feb',
-        year: 2019,
-        cost: 200000
-      },
-      {
-        id: 8,
-        month: 'Jan',
-        neighborID: '26382784',
+        id: 5,
+        month: 'Mar',
         year: 2020,
-        cost: 500000
+        cost: 23200000
       }
     ];
 
@@ -147,32 +127,9 @@ export class InMemoryDataService implements InMemoryDbService {
       }
     ];
 
-    const payments = [
-      {
-        id: 0,
-        neighborID: '26382781',
-        paymentDate: '07-12-2020',
-        amount: 200,
-        paymentMethod: 'Efectivo'
-      },
-      {
-        id: 1,
-        neighborID: '26382781',
-        paymentDate: '09-12-2020',
-        amount: 200,
-        paymentMethod: 'Efectivo'
-      },
-      {
-        id: 2,
-        neighborID: '26382783',
-        paymentDate: '07-12-2019',
-        amount: 200,
-        paymentMethod: 'Pago movil',
-        bank: 'Banco de Venezuela',
-        paymentID: '2983BA'
-      }
-    ];
-    return { payments, neighbors, monthlyPayments, repairs, contributions };
+    const payments = [];
+
+    return { payments, neighbors, repairs, contributions, monthlyPayments };
   }
 
   genId<T extends Payment | Neighbor | Repair | Contribution | MonthlyPayment>(
@@ -183,3 +140,12 @@ export class InMemoryDataService implements InMemoryDbService {
       : 0;
   }
 }
+
+/*
+  Diferencia entre dos arrays
+
+  1. Obtener los meses
+  2. Obtener las mensualidades pagadas por vecino
+  3. iterar sobre las mensualidades pagadas,
+
+*/

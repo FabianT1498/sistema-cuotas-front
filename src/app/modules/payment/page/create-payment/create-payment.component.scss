@@ -1,5 +1,11 @@
+@import '~@angular/material/theming';
+
+.align-items-center {
+  align-items: center;
+}
+
 .form-controls-container {
-  width: 100%;
+  flex: 0 0 50%;
   padding: 1rem;
 
   & > * {
@@ -7,17 +13,19 @@
   }
 }
 
+.width-80p {
+  flex: 0 0 80%;
+}
+
 .secondary-heading {
   text-align: center;
   margin-bottom: 1rem;
 }
 
-.start-mat-grid-list {
-  padding-top: 2rem;
-
-  & > .mat-grid-tile .mat-figure {
-    align-items: flex-start;
-  }
+.flex-container {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-start;
 }
 
 .btn-group {
@@ -34,5 +42,13 @@
   padding-top: 2rem;
   & > .mat-spinner {
     margin: 0 auto;
+  }
+}
+
+.not-empty-select.mat-selected {
+  color: green !important;
+
+  & > .mat-pseudo-checkbox-checked {
+    background: green !important;
   }
 }

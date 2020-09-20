@@ -1,21 +1,29 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   FormGroup,
   FormBuilder,
   Validators,
-  FormControl
+  FormControl,
+  FormArray
 } from '@angular/forms';
 
 import { map, startWith, takeUntil } from 'rxjs/operators';
-import { combineLatest, Observable, EMPTY } from 'rxjs';
+import { combineLatest, Observable, EMPTY, of } from 'rxjs';
+
+import { MatSelect } from '@angular/material/select';
 
 import { SelectOptionsService } from '@app/service/select-options.service';
 import { NeighborService } from '@data/service/neightbor.service';
 import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
+import { RepairService } from '@data/service/repair.service';
+import { ContributionService } from '@data/service/contribution.service';
 
 import { MonthlyPayment } from '@data/schema/monthly-payment';
 import { Neighbor } from '@data/schema/neighbor';
+import { Repair } from '@data/schema/repair';
+import { PaymentModel } from '@data/schema/payment';
+import { Contribution } from '@data/schema/contribution';
 
 @Component({
   selector: 'app-create-payment',
@@ -27,21 +35,27 @@ export class CreatePaymentComponent implements OnInit {
   isLoading: boolean;
   paymentForm: FormGroup;
   paymentMethods: Array<String>;
+  contributionsAdded: Array<Contribution>;
 
   banks$: Observable<Array<String>>;
   neighbors$: Observable<Neighbor[]>;
   filteredNeighbors$: Observable<Neighbor[]>;
   neighborFilter$: Observable<string>;
   monthlyPayments$: Observable<MonthlyPayment[]>;
+  repairs$: Observable<Repair[]>;
+  contributions$: Observable<Contribution[]>;
 
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
     private selectOptionsService: SelectOptionsService,
     private neighborService: NeighborService,
-    private monthlyPaymentService: MonthlyPaymentService
+    private monthlyPaymentService: MonthlyPaymentService,
+    private repairService: RepairService,
+    private contributionService: ContributionService
   ) {
     this.paymentMethods = Array('Efectivo', 'Pago movil', 'Transferencia');
+    this.contributionsAdded = Array();
   }
 
   ngOnInit() {
@@ -51,7 +65,8 @@ export class CreatePaymentComponent implements OnInit {
   }
 
   private loadInitialData() {
-    this.neighbors$ = this.neighborService.getNeighbors();
+    this.neighbors$ = this.neighborService.getAll();
+    this.contributions$ = this.contributionService.getAll();
   }
 
   private setupFormListeners() {
@@ -88,7 +103,18 @@ export class CreatePaymentComponent implements OnInit {
       ],
       paymentDate: ['', Validators.required],
       paymentMethod: ['', Validators.required],
-      amount: [0, [Validators.required, Validators.min(0)]]
+      amount: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.pattern('^[0-9]+(.[0-9]+)?$')
+        ]
+      ],
+      monthlyPayments: [[]],
+      repairs: [[]],
+      contribution: [''],
+      contributionForm: this.formBuilder.array([])
     });
   }
 
@@ -99,14 +125,20 @@ export class CreatePaymentComponent implements OnInit {
   neighborInputChange($event) {
     this.paymentForm.get('neighborID').setValue('');
     this.monthlyPayments$ = EMPTY;
+    this.repairs$ = EMPTY;
   }
 
   neighborOptionSelected($event) {
     const neighborID = $event.option.value.neighborID;
+
     this.paymentForm.get('neighborID').setValue(neighborID);
-    this.monthlyPayments$ = this.monthlyPaymentService.getMonthlyPayments(
-      neighborID
-    );
+
+    // For test purpose get all monthly Payments
+    this.monthlyPayments$ = this.monthlyPaymentService.getAll();
+    // this.monthlyPayments$ = this.monthlyPaymentService.getUnpaidMonthlyPayments(neighborID);
+
+    // For test purpose get all repairs
+    this.repairs$ = this.repairService.getAll();
   }
 
   displayNeighborName(neighbor) {
@@ -141,6 +173,44 @@ export class CreatePaymentComponent implements OnInit {
     }
   }
 
+  displayContribTitle(contribution) {
+    return contribution && contribution.title ? contribution.title : '';
+  }
+
+  addContribution() {
+    if (this.paymentForm.get('contribution')) {
+      const value = this.paymentForm.get('contribution').value;
+
+      if (value && typeof value === 'object') {
+        // check if doesn't exist the same element
+        if (
+          this.contributionsAdded.findIndex(el => el.id === value.id) === -1
+        ) {
+          this.contributionsAdded.push(value);
+          const contribForm = this.paymentForm.get(
+            'contributionForm'
+          ) as FormArray;
+          const control = new FormControl(0, [
+            Validators.required,
+            Validators.min(0),
+            Validators.pattern('^[0-9]+(.[0-9]+)?$')
+          ]);
+
+          contribForm.push(control);
+        }
+      }
+
+      this.paymentForm.get('contribution').setValue('');
+    }
+  }
+
+  deleteContribution(index) {
+    this.contributionsAdded.splice(index, 1);
+    const controls = this.paymentForm.get('contributionForm') as FormArray;
+    controls.removeAt(index);
+    // console.log(this.paymentForm.get('contributionForm'));
+  }
+
   onClear() {
     const formKeys = {
       neighbor: '',
@@ -159,7 +229,13 @@ export class CreatePaymentComponent implements OnInit {
   }
 
   createPayment() {
-    this.isLoading = true;
-    console.log('pago creado');
+    const payment = this.paymentForm.value;
+
+    delete payment.neighbor;
+
+    const paymentModel = new PaymentModel(payment);
+
+    // this.isLoading = true;
+    console.log(paymentModel);
   }
 }
