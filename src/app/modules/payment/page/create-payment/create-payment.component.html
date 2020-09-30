@@ -73,7 +73,7 @@
 	            <mat-form-field appearance="fill">
 	              <mat-label>Reparaciones</mat-label>
 	              <mat-select formControlName="repairs" multiple>
-	                <mat-option *ngFor="let item of repairs" [value]="item">{{item.title}}</mat-option>
+	                <mat-option *ngFor="let item of repairs" [value]="item">{{item.title}} - {{item.cost}}</mat-option>
 	              </mat-select>   
 	            </mat-form-field>
 	          </div>
@@ -90,7 +90,7 @@
 			                </mat-autocomplete>     
 			            </mat-form-field>       			
 					</div> 
-		            <div>
+		        <div>
 				        <button mat-mini-fab type="button" color="accent" (click)="addContribution()">
 				          <mat-icon>add</mat-icon>
 				        </button>
@@ -99,23 +99,31 @@
 	            <div formArrayName="contributionForm">
 	 				<div *ngFor="let control of f['contributionForm'].controls; index as i">
 	 					<div class="flex-container align-items-center">
-	 						<div class="form-controls-container">
+	 						<div class="form-controls-container width-40p">
 	 							<mat-label>{{contributionsAdded[i].title}}</mat-label>
 	 						</div>
-						  	<div class="form-controls-container">
-						  		<mat-form-field>
-					              <input type="text" matInput  [placeholder]="'Monto'" [formControlName]="i">
-					              <app-control-messages [control]="control"></app-control-messages>
-					            </mat-form-field>	
-						  	</div> 
+						  <div class="form-controls-container width-40p">
+						  	<mat-form-field>
+		              <input type="text" matInput  [placeholder]="'Monto'" [formControlName]="i">
+		              <app-control-messages [control]="control"></app-control-messages>
+					      </mat-form-field>	
+						  </div>
+						  <div>
+				        <button mat-mini-fab type="button" color="accent" (click)="deleteContribution(i)">
+				          <mat-icon>delete</mat-icon>
+				        </button>
+				    	</div>
 	 					</div>
 				    </div>
 			  	</div>
 			  </div>
-			  <div class="btn-group">
-			  	
-			  </div>
-	        </div>
+        <div class="form-controls-container">
+          <div class="btn-group">
+            <button mat-raised-button color="primary" type="submit" [disabled]="paymentForm.invalid">Submit</button>
+            <button mat-raised-button color="warn" type="button" (click)="onClear()">Clear</button>
+          </div>
+        </div>
+	     </div>
 	    </form>
   	</fieldset>
   	<ng-template #noNeighbors>

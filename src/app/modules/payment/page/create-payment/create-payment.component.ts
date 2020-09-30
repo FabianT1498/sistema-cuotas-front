@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   FormGroup,
@@ -8,10 +8,8 @@ import {
   FormArray
 } from '@angular/forms';
 
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { map, startWith } from 'rxjs/operators';
 import { combineLatest, Observable, EMPTY, of } from 'rxjs';
-
-import { MatSelect } from '@angular/material/select';
 
 import { SelectOptionsService } from '@app/service/select-options.service';
 import { NeighborService } from '@data/service/neightbor.service';
@@ -206,9 +204,33 @@ export class CreatePaymentComponent implements OnInit {
 
   deleteContribution(index) {
     this.contributionsAdded.splice(index, 1);
-    const controls = this.paymentForm.get('contributionForm') as FormArray;
-    controls.removeAt(index);
-    // console.log(this.paymentForm.get('contributionForm'));
+    const formArray = this.paymentForm.get('contributionForm') as FormArray;
+    formArray.removeAt(index);
+  }
+
+  private isValidAmount(): boolean {
+    const reducer = (accumulator, currentValue) => accumulator + currentValue;
+    let acc = 0;
+
+    // get arrays costs and contributions
+    const formArray = this.paymentForm.get('contributionForm') as FormArray;
+    const arrContrib = formArray.controls.map(el => el.value);
+    const arrRepairs = this.paymentForm.get('repairs').value.map(el => el.cost);
+    const arrMonthlyPayment = this.paymentForm
+      .get('monthlyPayments')
+      .value.map(el => el.cost);
+
+    // adding all debits
+    acc = arrContrib.reduce(reducer);
+    acc = arrRepairs.reduce(reducer, acc);
+    acc = arrMonthlyPayment.reduce(reducer, acc);
+
+    console.log(`El debito es de -${acc}`);
+
+    // get amount payment
+    const amount = this.paymentForm.get('amount').value;
+
+    return amount > acc ? true : false;
   }
 
   onClear() {
@@ -229,6 +251,12 @@ export class CreatePaymentComponent implements OnInit {
   }
 
   createPayment() {
+    if (this.isValidAmount()) console.log('Cantidad valida');
+    else {
+      console.log('cantidad invalida');
+      return;
+    }
+
     const payment = this.paymentForm.value;
 
     delete payment.neighbor;
