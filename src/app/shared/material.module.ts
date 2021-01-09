@@ -20,7 +20,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatGridListModule } from '@angular/material/grid-list';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatStepperModule } from '@angular/material/stepper';
 
 @NgModule({
   declarations: [],
@@ -45,7 +46,8 @@ import {MatAutocompleteModule} from '@angular/material/autocomplete';
     MatDatepickerModule,
     MatNativeDateModule,
     MatGridListModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    MatStepperModule
   ],
   exports: [
     MatButtonModule,
@@ -68,7 +70,8 @@ import {MatAutocompleteModule} from '@angular/material/autocomplete';
     MatDatepickerModule,
     MatNativeDateModule,
     MatGridListModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    MatStepperModule
   ]
 })
 export class MaterialModule {}

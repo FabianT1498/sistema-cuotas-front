@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
+/* import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component'; */
 import { ContentLayoutComponent } from './layout/content-layout/content-layout.component';
 import { NoAuthGuard } from '@app/guard/no-auth.guard';
 
 const routes: Routes = [
   {
     path: '',
-    redirectTo: '/auth/login',
+    redirectTo: 'dashboard',
     pathMatch: 'full'
   },
   {
@@ -21,25 +21,14 @@ const routes: Routes = [
           import('@modules/home/home.module').then(m => m.HomeModule)
       },
       {
-        path: 'about',
+        path: 'pagos',
         loadChildren: () =>
-          import('@modules/about/about.module').then(m => m.AboutModule)
-      },
-      {
-        path: 'contact',
-        loadChildren: () =>
-          import('@modules/contact/contact.module').then(m => m.ContactModule)
+          import('@modules/payment/payment.module').then(m => m.PaymentModule)
       }
     ]
   },
-  {
-    path: 'auth',
-    component: AuthLayoutComponent,
-    loadChildren: () =>
-      import('@modules/auth/auth.module').then(m => m.AuthModule)
-  },
   // Fallback when no prior routes is matched
-  { path: '**', redirectTo: '/auth/login', pathMatch: 'full' }
+  { path: '**', redirectTo: 'dashboard', pathMatch: 'full' }
 ];
 
 @NgModule({

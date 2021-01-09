@@ -14,7 +14,7 @@ export class InMemoryDataService implements InMemoryDbService {
     const neighbors = [
       {
         id: 0,
-        neighborID: '26382781',
+        dni: 'V-26382781',
         fullName: 'Fabian Trillo',
         phoneNumber: '0414-8942584',
         email: 'fabiantrillo1498@gmail.com',
@@ -22,7 +22,7 @@ export class InMemoryDataService implements InMemoryDbService {
       },
       {
         id: 1,
-        neighborID: '26382782',
+        dni: 'V-26382782',
         fullName: 'Fabian Malave',
         phoneNumber: '0414-8942584',
         email: 'fabianmalave1498@gmail.com',
@@ -30,7 +30,7 @@ export class InMemoryDataService implements InMemoryDbService {
       },
       {
         id: 2,
-        neighborID: '26382783',
+        dni: 'V-26382783',
         fullName: 'Fabian Gonzalez',
         phoneNumber: '0414-8942584',
         email: 'fabiangon1498@gmail.com',
@@ -38,7 +38,7 @@ export class InMemoryDataService implements InMemoryDbService {
       },
       {
         id: 3,
-        neighborID: '26382784',
+        dni: 'V-26382784',
         fullName: 'Barbara Trillo',
         phoneNumber: '0414-8942584',
         email: 'barbaratrillo1498@gmail.com',

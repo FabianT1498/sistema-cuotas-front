@@ -4,32 +4,33 @@
   align-items: center;
 }
 
-.form-controls-container {
-  flex: 0 0 50%;
-  padding: 1rem;
+.flex-container {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+  align-items: center;
 
-  & > * {
-    width: 100%;
+  .item-flex {
+    flex: 0 0 30%;
+    padding: 0.8rem;
+
+    & > .mat-form-field {
+      width: 100%;
+    }
   }
-}
 
-.width-80p {
-  flex: 0 0 80%;
-}
+  .item-flex.width-80p {
+    flex: 0 0 80%;
+  }
 
-.width-40p {
-  flex: 0 0 80%;
+  .item-flex.width-20p {
+    flex: 0 0 20%;
+  }
 }
 
 .secondary-heading {
   text-align: center;
   margin-bottom: 1rem;
-}
-
-.flex-container {
-  display: flex;
-  flex-flow: row wrap;
-  justify-content: flex-start;
 }
 
 .btn-group {

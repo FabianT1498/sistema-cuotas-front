@@ -4,8 +4,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { MaterialModule } from './material.module';
-
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgxMaskModule } from 'ngx-mask';
 
 import {
   FontAwesomeModule,
@@ -65,7 +65,8 @@ import { SpinnerComponent } from './component/spinner/spinner.component';
     FontAwesomeModule,
 
     ControlMessagesComponent,
-    SpinnerComponent
+    SpinnerComponent,
+    NgxMaskModule
   ]
 })
 export class SharedModule {

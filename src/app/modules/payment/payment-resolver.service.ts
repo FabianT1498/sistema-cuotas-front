@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+/* import { Injectable } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   Resolve,
@@ -25,4 +25,4 @@ export class ProjectResolver implements Resolve<Project> {
       .getSingle(route.params['id'])
       .pipe(catchError(err => this.router.navigateByUrl('/')));
   }
-}
+} */

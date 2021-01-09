@@ -1,4 +1,12 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  TemplateRef,
+  ViewChild,
+  ViewContainerRef,
+  ViewEncapsulation
+} from '@angular/core';
 import { Router } from '@angular/router';
 import {
   FormGroup,
@@ -8,15 +16,17 @@ import {
   FormArray
 } from '@angular/forms';
 
-import { map, startWith } from 'rxjs/operators';
-import { combineLatest, Observable, EMPTY, of } from 'rxjs';
+import { map, startWith, takeUntil } from 'rxjs/operators';
+import { combineLatest, Observable, EMPTY, of, Subject } from 'rxjs';
 
+/** SERVICES */
 import { SelectOptionsService } from '@app/service/select-options.service';
 import { NeighborService } from '@data/service/neightbor.service';
 import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
 import { RepairService } from '@data/service/repair.service';
 import { ContributionService } from '@data/service/contribution.service';
 
+/** SCHEMAS */
 import { MonthlyPayment } from '@data/schema/monthly-payment';
 import { Neighbor } from '@data/schema/neighbor';
 import { Repair } from '@data/schema/repair';
@@ -29,9 +39,22 @@ import { Contribution } from '@data/schema/contribution';
   styleUrls: ['./create-payment.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class CreatePaymentComponent implements OnInit {
-  isLoading: boolean;
+export class CreatePaymentComponent implements OnInit, OnDestroy {
+  @ViewChild('neighborNotFound') neighborNotFoundComp: TemplateRef<any>;
+  @ViewChild('neighborFound') neighborFoundComp: TemplateRef<any>;
+  @ViewChild('newNeighbor') newNeighborComp: TemplateRef<any>;
+  @ViewChild('neighborContainer', { read: ViewContainerRef }) neighborContainer;
+
+  neighbor: Neighbor;
+  neighborDNI$: Subject<string>;
+
+  private signal$: Subject<any>;
+
   paymentForm: FormGroup;
+  paymentFormArr: FormArray;
+  neighborGroup: FormGroup;
+
+  isLoading: boolean;
   paymentMethods: Array<String>;
   contributionsAdded: Array<Contribution>;
 
@@ -63,12 +86,34 @@ export class CreatePaymentComponent implements OnInit {
   }
 
   private loadInitialData() {
-    this.neighbors$ = this.neighborService.getAll();
     this.contributions$ = this.contributionService.getAll();
   }
 
   private setupFormListeners() {
-    this.neighborFilter$ = this.paymentForm.get('neighbor').valueChanges.pipe(
+    this.signal$ = new Subject();
+
+    this.neighborDNI$ = new Subject<string>();
+
+    this.neighborService
+      .getNeighbor(this.neighborDNI$)
+      .pipe(takeUntil(this.signal$))
+      .subscribe((neighbor: any) => {
+        let view;
+
+        if (neighbor.length > 0) {
+          this.neighbor = neighbor[0];
+          this.removeNeighborControls();
+          view = this.neighborFoundComp.createEmbeddedView(null);
+        } else {
+          view = this.neighborNotFoundComp.createEmbeddedView(null);
+        }
+
+        this.neighborContainer.remove();
+        this.neighborContainer.insert(view);
+
+        console.log(this.paymentForm.controls['paymentFormArr'].get([0]));
+      });
+    /* this.neighborFilter$ = this.paymentForm.get('neighbor').valueChanges.pipe(
       startWith(''),
       map(value => (typeof value === 'string' ? value : value.fullName))
     );
@@ -85,11 +130,28 @@ export class CreatePaymentComponent implements OnInit {
               .indexOf(filterString.toLowerCase()) !== -1
         )
       )
-    );
+    ); */
+  }
+
+  private createNeighborGroup(): FormGroup {
+    return this.formBuilder.group({
+      neighborDNI: [
+        '',
+        [
+          Validators.required,
+          Validators.pattern('^[VE|ve]-[0-9]+'),
+          Validators.maxLength(10)
+        ]
+      ]
+    });
   }
 
   private buildForm(): void {
     this.paymentForm = this.formBuilder.group({
+      paymentFormArr: this.formBuilder.array([this.createNeighborGroup()])
+    });
+
+    /* this.paymentForm = this.formBuilder.group({
       neighbor: ['', Validators.required],
       neighborID: [
         '',
@@ -113,17 +175,61 @@ export class CreatePaymentComponent implements OnInit {
       repairs: [[]],
       contribution: [''],
       contributionForm: this.formBuilder.array([])
-    });
+    }); */
   }
 
   get f() {
     return this.paymentForm.controls;
   }
 
-  neighborInputChange($event) {
-    this.paymentForm.get('neighborID').setValue('');
-    this.monthlyPayments$ = EMPTY;
-    this.repairs$ = EMPTY;
+  neighborDNIChange($event) {
+    this.neighborDNI$.next($event.target.value);
+  }
+
+  private addNeighborControls() {
+    if (typeof this.neighborGroup === 'undefined') {
+      this.paymentFormArr = this.paymentForm.get('paymentFormArr') as FormArray;
+      this.neighborGroup = this.paymentFormArr.get([0]) as FormGroup;
+    }
+
+    this.neighborGroup.addControl(
+      'fullName',
+      new FormControl('', [
+        Validators.required,
+        Validators.pattern('^([A-Z]|[a-z]| )+$')
+      ])
+    );
+    this.neighborGroup.addControl(
+      'phoneNumber',
+      new FormControl('', Validators.pattern('^[0-9]+-[0-9]+$'))
+    );
+    this.neighborGroup.addControl(
+      'email',
+      new FormControl('', Validators.email)
+    );
+    this.neighborGroup.addControl(
+      'houseNumber',
+      new FormControl('', [
+        Validators.required,
+        Validators.pattern('^([A-Z]|[a-z])-[0-9]+$')
+      ])
+    );
+  }
+
+  private removeNeighborControls() {
+    if (typeof this.neighborGroup !== 'undefined') {
+      this.neighborGroup.removeControl('fullName');
+      this.neighborGroup.removeControl('phoneNumber');
+      this.neighborGroup.removeControl('email');
+      this.neighborGroup.removeControl('houseNumber');
+    }
+  }
+
+  addNeighbor() {
+    this.addNeighborControls();
+    const view = this.newNeighborComp.createEmbeddedView(null);
+    this.neighborContainer.remove();
+    this.neighborContainer.insert(view);
   }
 
   neighborOptionSelected($event) {
@@ -265,5 +371,11 @@ export class CreatePaymentComponent implements OnInit {
 
     // this.isLoading = true;
     console.log(paymentModel);
+  }
+
+  ngOnDestroy(): void {
+    // Signal all streams to complete
+    this.signal$.next();
+    this.signal$.complete();
   }
 }
