@@ -1,15 +1,14 @@
 <form (ngSubmit)="createPayment()" [formGroup]="paymentForm">
 	
-	<mat-horizontal-stepper formArrayName="paymentFormArr" linear>
+	<mat-horizontal-stepper formArrayName="paymentFormArr" linear (selectionChange)="receiveStep($event)">
 
 		<ng-container *ngIf="paymentForm">
 			<mat-step 
 				formGroupName="0" 
 				[stepControl]="f['paymentFormArr'].get([0])" 
-				label="Datos del vecino"
+				label="Vecino"
 			>			
 				<div class="flex-container">
-					
 					<div class="item-flex">
 						<mat-form-field>
 							<input 
@@ -21,6 +20,7 @@
 							>
 							<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['neighborDNI']"></app-control-messages>    
 						</mat-form-field>
+						<input type="hidden" formControlName="neighborID">
 					</div>
 					
 					<ng-container #neighborContainer></ng-container>
@@ -77,7 +77,6 @@
 									formControlName="houseNumber"
 								>
 								<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['houseNumber']"></app-control-messages>  
-						
 							</mat-form-field>
 						</div>
 					</ng-template>
@@ -88,120 +87,380 @@
 				</div>
 
 			</mat-step>
-		</ng-container>	
-	</mat-horizontal-stepper>
 
-	
-			<!-- <div class="form-controls-container"> 
-			<h2 class="secondary-heading">Datos del pago</h2>
-			<mat-form-field appearance="fill">
-				<mat-label>Selecciona una fecha</mat-label>
-				<input matInput [matDatepicker]="picker" formControlName="paymentDate" required>
-				<mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-				<mat-datepicker #picker></mat-datepicker>
-				<app-control-messages [control]="f['paymentDate']"></app-control-messages>
-			</mat-form-field>
-			<mat-form-field appearance="fill">
-				<mat-label>Tipo de pago</mat-label>
-				<select matNativeControl (change)="paymentMethodChange($event)" formControlName="paymentMethod" required>
-				<option 
-					*ngFor="let method of paymentMethods" 
-					[value]="method" 
-				>
-					{{method}}
-				</option>
-				</select>
-				<app-control-messages [control]="f['paymentMethod']"></app-control-messages>   
-			</mat-form-field>
-			<ng-container *ngIf="isElectronicPayment">
-				<mat-form-field appearance="fill">
-				<mat-label>Banco</mat-label>
-				<select matNativeControl formControlName="bank" required>
-					<option *ngFor="let bank of banks$ | async" [value]="bank">
-					{{bank}}
-					</option>
-				</select>
-				<app-control-messages [control]="f['bank']"></app-control-messages>   
-				</mat-form-field>  
-				<mat-form-field>
-				<input matInput [placeholder]="'Numero de referencia'" formControlName="paymentID" required>
-				<app-control-messages [control]="f['paymentID']"></app-control-messages>
-				</mat-form-field>
-			</ng-container>
-			<mat-form-field>
-				<input type="text" matInput  [placeholder]="'Monto'" formControlName="amount">
-				<app-control-messages [control]="f['amount']"></app-control-messages>
-			</mat-form-field>
-			</div>
-			<div class="form-controls-container" *ngIf="(monthlyPayments$ | async) as monthlyPayments">
-			<h2 class="secondary-heading">Mensualidades por pagar</h2>
-			<mat-form-field appearance="fill">
-				<mat-label>Mensualidades</mat-label>
-				<mat-select formControlName="monthlyPayments" multiple>
-				<mat-option *ngFor="let item of monthlyPayments" [value]="item">{{item.month}} {{item.year}}</mat-option>
-				</mat-select>       
-			</mat-form-field>
-			</div>
-			<div class="form-controls-container" *ngIf="(repairs$ | async) as repairs">
-			<h2 class="secondary-heading">Reparaciones por pagar</h2>
-			<mat-form-field appearance="fill">
-				<mat-label>Reparaciones</mat-label>
-				<mat-select formControlName="repairs" multiple>
-				<mat-option *ngFor="let item of repairs" [value]="item">{{item.title}} - {{item.cost}}</mat-option>
-				</mat-select>   
-			</mat-form-field>
-			</div>
-			<div class="form-controls-container" *ngIf="(contributions$ | async) as contributions">
-			<h2 class="secondary-heading">Contribuciones</h2>
-			<div class="flex-container align-items-center">
-				<div class="form-controls-container width-80p">
-					<mat-form-field>
-						<input matInput [placeholder]="'Contribuciones'" formControlName="contribution" [matAutocomplete]="autoContrib">
-						<mat-autocomplete autoActiveFirstOption [displayWith]="displayContribTitle" #autoContrib="matAutocomplete">
-							<mat-option *ngFor="let item of contributions" [value]="item">
-							{{item.title}}
-							</mat-option>
-						</mat-autocomplete>     
-					</mat-form-field>       			
-				</div> 
-			<div>
-					<button mat-mini-fab type="button" color="accent" (click)="addContribution()">
-						<mat-icon>add</mat-icon>
-					</button>
-				</div> 			
-			</div>
-			<div formArrayName="contributionForm">
-				<div *ngFor="let control of f['contributionForm'].controls; index as i">
-					<div class="flex-container align-items-center">
-						<div class="form-controls-container width-40p">
-							<mat-label>{{contributionsAdded[i].title}}</mat-label>
-						</div>
-						<div class="form-controls-container width-40p">
-						<mat-form-field>
-					<input type="text" matInput  [placeholder]="'Monto'" [formControlName]="i">
-					<app-control-messages [control]="control"></app-control-messages>
-						</mat-form-field>	
-						</div>
-						<div>
-					<button mat-mini-fab type="button" color="accent" (click)="deleteContribution(i)">
-						<mat-icon>delete</mat-icon>
-					</button>
+			<mat-step 
+				formGroupName="1" 
+				[stepControl]="f['paymentFormArr'].get([1])" 
+				label="Datos del Pago"
+			>
+				<div class="flex-container">
+					<div class="item-flex">
+						<mat-form-field appearance="fill">
+							<mat-label>Seleccione la fecha del pago</mat-label>
+							<input matInput [matDatepicker]="picker" formControlName="paymentDate">
+							<mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+							<mat-datepicker #picker></mat-datepicker>
+							<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['paymentDate']"></app-control-messages>
+						</mat-form-field>
 					</div>
+
+					<div class="item-flex">
+						<mat-form-field appearance="fill">
+							<mat-label>Forma de pago</mat-label>
+							<select matNativeControl (change)="paymentMethodChange($event)" formControlName="paymentMethod" required>
+								<option 
+									*ngFor="let method of paymentMethods" 
+									[value]="method.id" 
+								>
+									{{method.name}}
+								</option>
+							</select>
+							<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['paymentMethod']"></app-control-messages>   
+						</mat-form-field>
+					</div>
+
+					<ng-container *ngIf="isElectronicPayment">
+						<div class="item-flex">
+							<mat-form-field appearance="fill">
+								<mat-label>Banco</mat-label>
+								<select matNativeControl formControlName="bank" required>
+									<option *ngFor="let bank of banks$ | async" [value]="bank">
+										{{bank}}
+									</option>
+								</select>
+								<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['bank']"></app-control-messages>   
+							</mat-form-field> 
+						</div>
+						<div class="item-flex">
+							<mat-form-field appearance="fill">
+								<mat-label>Número de referencia</mat-label>
+								<input matInput [placeholder]="'Numero de referencia'" formControlName="paymentID" required>
+								<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['paymentID']"></app-control-messages>
+							</mat-form-field>
+						</div>
+					</ng-container>
+					<div class="flex-item">
+						<mat-form-field appearance="fill">
+							<mat-label>Monto</mat-label>
+							<input type="text" matInput  [placeholder]="'Monto'" formControlName="amount">
+							<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['amount']"></app-control-messages>
+						</mat-form-field>		
 					</div>
 				</div>
-			</div>
-			</div>
-	<div class="form-controls-container">
-		<div class="btn-group">
-		<button mat-raised-button color="primary" type="submit" [disabled]="paymentForm.invalid">Submit</button>
-		<button mat-raised-button color="warn" type="button" (click)="onClear()">Clear</button>
-		</div>
-	</div> -->
+				<div>
+					<button mat-button matStepperPrevious type="button">Atras</button>
+					<button mat-button matStepperNext type="button">Siguiente</button>
+				</div>
+			</mat-step>
+
+			<mat-step 
+				[optional]="true"
+				label="Mensualidades"
+			>
+				
+				<div class="mat-elevation-z8">
+					<table mat-table [dataSource]="monthlyPaymentsSource" matSort>
 	
+						<!-- Checkbox Column -->
+						<ng-container matColumnDef="select">
+							<th mat-header-cell *matHeaderCellDef>
+								<mat-checkbox (change)="$event ? masterToggleMonthlyPaymentsTbl() : null"
+											[checked]="monthlyPaymentsSelection.hasValue() && isAllMonthlyPaymentsSelected()"
+											[indeterminate]="monthlyPaymentsSelection.hasValue() && !isAllMonthlyPaymentsSelected()"
+											[aria-label]="checkboxLabelMonthlyPaymentsTbl()">
+								</mat-checkbox>
+							</th>
+							<td mat-cell *matCellDef="let row">
+								<mat-checkbox (click)="$event.stopPropagation()"
+												(change)="toggleMonthlyPayment($event, row)"
+												[checked]="monthlyPaymentsSelection.isSelected(row)"
+												[aria-label]="checkboxLabelMonthlyPaymentsTbl(row)">
+								</mat-checkbox>
+							</td>
+						</ng-container>
+						
+						<!-- ID Column -->
+						<ng-container matColumnDef="position">
+							<th mat-header-cell *matHeaderCellDef mat-sort-header> Nro.</th>
+							<td mat-cell *matCellDef="let element"> {{element.position}} </td>
+						</ng-container>
+						
+						<!-- Month Column -->
+						<ng-container matColumnDef="month">
+							<th mat-header-cell *matHeaderCellDef> Mes </th>
+							<td mat-cell *matCellDef="let element"> {{element.month}} </td>
+						</ng-container>
+						
+						<!-- Year Column -->
+						<ng-container matColumnDef="year">
+							<th mat-header-cell *matHeaderCellDef mat-sort-header> Año </th>
+							<td mat-cell *matCellDef="let element"> {{element.year}} </td>
+						</ng-container>
+						
+						<!-- Cost Column -->
+						<ng-container matColumnDef="cost">
+							<th mat-header-cell *matHeaderCellDef> Costo (bs.s)</th>
+							<td mat-cell *matCellDef="let element"> {{element.cost}} </td>	
+						</ng-container>
+
+						<!-- Empty footer Column -->
+						<ng-container matColumnDef="emptyFooter">
+							<td mat-footer-cell *matFooterCellDef></td>
+						</ng-container>
+
+						<!-- Total cost title Column -->
+						<ng-container matColumnDef="totalTitle">
+							<td mat-footer-cell *matFooterCellDef>Total a pagar</td>
+						</ng-container>
+
+						<!-- Total cost  Column -->
+						<ng-container matColumnDef="totalCost">
+							<td mat-footer-cell *matFooterCellDef> {{getTotalCostMonthlyPayments() }} </td>
+						</ng-container>
+
+						<tr mat-header-row *matHeaderRowDef="monthlyPaymentsTblColumns"></tr>
+						<tr mat-row *matRowDef="let row; columns: monthlyPaymentsTblColumns;"
+							(click)="toggleMonthlyPayment($event, row)">
+						</tr>
+						<tr mat-footer-row *matFooterRowDef="totalMonthlyPaymentsTblColumns"></tr>
+						
+						<!-- Row shown when there is no matching data. -->
+						<tr class="mat-row" *matNoDataRow>
+							<td class="mat-cell" colspan="4">Este vecino no dispone ninguna mensualidad por pagar"</td>
+						</tr>
+					</table>
+					<mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+				</div>
+				
+				<div>
+					<button mat-button matStepperPrevious type="button">Atras</button>
+					<button mat-button matStepperNext type="button">Siguiente</button>
+				</div>
+			</mat-step>
+
+			<mat-step 
+				[optional]="true"
+				label="Reparaciones"
+			>
+			
+				<div class="mat-elevation-z8">
+					<table mat-table [dataSource]="repairsSource" matSort>
+	
+						<!-- Checkbox Column -->
+						<ng-container matColumnDef="select">
+							<th mat-header-cell *matHeaderCellDef>
+								<mat-checkbox (change)="$event ? masterToggleRepairsTbl() : null"
+											[checked]="repairsSelection.hasValue() && isAllRepairsSelected()"
+											[indeterminate]="repairsSelection.hasValue() && !isAllRepairsSelected()"
+											[aria-label]="checkboxLabelRepairsTbl()">
+								</mat-checkbox>
+							</th>
+							<td mat-cell *matCellDef="let row">
+								<mat-checkbox (click)="$event.stopPropagation()"
+												(change)="toggleRepair($event, row)"
+												[checked]="repairsSelection.isSelected(row)"
+												[aria-label]="checkboxLabelRepairsTbl(row)">
+								</mat-checkbox>
+							</td>
+						</ng-container>
+						
+						<!-- ID Column -->
+						<ng-container matColumnDef="position">
+							<th mat-header-cell *matHeaderCellDef mat-sort-header> Nro.</th>
+							<td mat-cell *matCellDef="let element"> {{element.position}} </td>
+						</ng-container>
+						
+						<!-- Title Column -->
+						<ng-container matColumnDef="repair">
+							<th mat-header-cell *matHeaderCellDef> Reparación </th>
+							<td mat-cell *matCellDef="let element"> {{element.title}} </td>
+						</ng-container>
+						
+						<!-- Year Column -->
+						<ng-container matColumnDef="date">
+							<th mat-header-cell *matHeaderCellDef mat-sort-header> Fecha del suceso </th>
+							<td mat-cell *matCellDef="let element"> {{element.date}} </td>
+						</ng-container>
+						
+						<!-- Cost Column -->
+						<ng-container matColumnDef="cost">
+							<th mat-header-cell *matHeaderCellDef> Costo (bs.s)</th>
+							<td mat-cell *matCellDef="let element"> {{element.cost}} </td>	
+						</ng-container>
+
+						<!-- Empty footer Column -->
+						<ng-container matColumnDef="emptyFooter">
+							<td mat-footer-cell *matFooterCellDef></td>
+						</ng-container>
+
+						<!-- Total cost title Column -->
+						<ng-container matColumnDef="totalTitle">
+							<td mat-footer-cell *matFooterCellDef>Total a pagar</td>
+						</ng-container>
+
+						<!-- Total cost  Column -->
+						<ng-container matColumnDef="totalCost">
+							<td mat-footer-cell *matFooterCellDef> {{getTotalCostRepairs() }} </td>
+						</ng-container>
+
+						<tr mat-header-row *matHeaderRowDef="repairsTblColumns"></tr>
+						<tr mat-row *matRowDef="let row; columns: repairsTblColumns;"
+							(click)="toggleRepair($event, row)">
+						</tr>
+						<tr mat-footer-row *matFooterRowDef="totalRepairsTblColumns"></tr>
+						
+						<!-- Row shown when there is no matching data. -->
+						<tr class="mat-row" *matNoDataRow>
+							<td class="mat-cell" colspan="4">Este vecino no dispone ninguna reparación por pagar"</td>
+						</tr>
+
+					</table>
+					<mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+				</div>
+				
+				<div>
+					<button mat-button matStepperPrevious type="button">Atras</button>
+					<button mat-button matStepperNext type="button">Siguiente</button>
+				</div>
+			</mat-step>
+
+			<mat-step [optional]="true" label="Contribuciones">
+				<div class="mat-elevation-z8">
+					<table mat-table [dataSource]="contributionsSource">
+	
+						<!-- ID Column -->
+						<ng-container matColumnDef="position">
+							<th mat-header-cell *matHeaderCellDef> Nro.</th>
+							<td mat-cell *matCellDef="let element"> {{element.position}} </td>
+						</ng-container>
+						
+						<!-- Title Column -->
+						<ng-container matColumnDef="contributionTitle">
+							<th mat-header-cell *matHeaderCellDef> Contribución </th>
+							<td mat-cell *matCellDef="let element"> {{element.title}} </td>
+						</ng-container>
+								
+						<!-- Contribution Column -->
+						<ng-container matColumnDef="contributionAmount">
+							<th mat-header-cell *matHeaderCellDef>Cantidad a contribuir</th>
+							<td mat-cell *matCellDef="let element; let i = index"> 
+								<mat-form-field appearance="standard">
+									<input 
+										matInput 
+										type="number"
+										[(ngModel)]="neighborContributions[i]" 
+										[ngModelOptions]="{standalone: true}"
+										class="right-align"
+										placeholder="Ingrese un monto"
+									>
+									<span matPrefix>Bs.s&nbsp;</span>
+									<span matSuffix>.00</span>
+								</mat-form-field>
+							</td>	
+						</ng-container>
+
+						<!-- Empty footer Column -->
+						<ng-container matColumnDef="emptyFooter">
+							<td mat-footer-cell *matFooterCellDef></td>
+						</ng-container>
+
+						<!-- Total contribution title Column -->
+						<ng-container matColumnDef="totalTitle">
+							<td mat-footer-cell *matFooterCellDef>Total a contribuir</td>
+						</ng-container>
+
+						<!-- Total cost  Column -->
+						<ng-container matColumnDef="totalContribution">
+							<td mat-footer-cell *matFooterCellDef> {{getTotalContribution() }} </td>
+						</ng-container>
+
+						<tr mat-header-row *matHeaderRowDef="contributionsTblColumns"></tr>
+						<tr mat-row *matRowDef="let row; columns: contributionsTblColumns;"></tr>
+						<tr mat-footer-row *matFooterRowDef="totalContributionsTblColumns"></tr>
+						
+						<!-- Row shown when there is no matching data. -->
+						<tr class="mat-row" *matNoDataRow>
+							<td class="mat-cell" colspan="4">No hay contribuciones registradas</td>
+						</tr>
+						
+					</table>
+					<mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+				</div>
+				<div>
+					<button mat-button matStepperPrevious type="button">Atras</button>
+					<button mat-button matStepperNext type="button">Siguiente</button>
+				</div>
+			</mat-step>
+			<mat-step label="Completar">
+				<table mat-table [dataSource]="summarySource">
+	
+					<!-- Title Column -->
+					<ng-container matColumnDef="title">
+						<th mat-header-cell *matHeaderCellDef> Item </th>
+						<td mat-cell *matCellDef="let element"> {{ element.title }} </td>
+					</ng-container>
+							
+					<!-- Contribution Column -->
+					<ng-container matColumnDef="amountTitle">
+						<th mat-header-cell *matHeaderCellDef>Monto (bs.s)</th>
+						<td mat-cell *matCellDef="let element"> 
+							{{ element.amount }}
+						</td>	
+					</ng-container>
+
+					<!-- //Empty footer Column -->
+					<ng-container matColumnDef="emptyFooter">
+						<td mat-footer-cell *matFooterCellDef></td>
+					</ng-container>
+
+					<!-- Total contribution title Column -->
+					<ng-container matColumnDef="totalTitle">
+						<td mat-footer-cell *matFooterCellDef>Total a pagar</td>
+					</ng-container>
+
+					<!-- // Total cost Column -->
+					<ng-container matColumnDef="totalSummary">
+						<td mat-footer-cell *matFooterCellDef> {{ getTotalSummary() }} </td>
+					</ng-container>
+
+					<!-- // Total contribution title Column  -->
+					<ng-container matColumnDef="availableTitle">
+						<td mat-footer-cell *matFooterCellDef>Disponible</td>
+					</ng-container>
+
+					<!-- // Total available  Column -->
+					<ng-container matColumnDef="available">
+						<td mat-footer-cell *matFooterCellDef> {{ f['paymentFormArr'].get([1]).controls['amount'].value }} </td>
+					</ng-container>
+
+					<!-- // Remaining title Column  -->
+					<ng-container matColumnDef="remainingTitle">
+						<td mat-footer-cell *matFooterCellDef>Restante</td>
+					</ng-container>
+
+					<!-- / Total cost  Column -->
+					<ng-container matColumnDef="remainingSummary">
+						<td mat-footer-cell *matFooterCellDef [ngClass]="{'text-danger': getAmountRemaining() < 0}"> {{ getAmountRemaining() }} </td>
+					</ng-container>
+
+					<tr mat-header-row *matHeaderRowDef="summaryTblColumns"></tr>
+					<tr mat-row *matRowDef="let row; columns: summaryTblColumns;"></tr>
+					<tr mat-footer-row *matFooterRowDef="totalSummaryTblColumns"></tr>
+					<tr mat-footer-row *matFooterRowDef="availableSummaryTblColumns"></tr>
+					<tr mat-footer-row *matFooterRowDef="remaningSummaryTblColumns"></tr>
+					
+					<!-- // Row show when there is no matching data. -->
+					<tr class="mat-row" *matNoDataRow>
+						<td class="mat-cell" colspan="4">No han sido registrados elementos por pagar</td>
+					</tr>
+					
+				</table>
+				<div>
+					<button mat-button matStepperPrevious type="button">Atras</button>
+					<button mat-button matStepperNext type="submit" [disabled]="paymentForm.invalid">Completar</button>
+				</div>
+			</mat-step>
+			
+		</ng-container>	
+	</mat-horizontal-stepper>
 </form>
-		
-<!-- <ng-template #loading>
-  <div class="center">
-    <mat-spinner color="accent" diameter="70"></mat-spinner>
-  </div>
-</ng-template> -->

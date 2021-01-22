@@ -1,4 +1,24 @@
-@import '~@angular/material/theming';
+table {
+  width: 100%;
+}
+
+tr.mat-footer-row {
+  font-weight: bold;
+}
+
+.right-align {
+  text-align: right;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input.right-align::-webkit-outer-spin-button,
+input.right-align::-webkit-inner-spin-button {
+  display: none;
+}
+
+input.right-align {
+  -moz-appearance: textfield;
+}
 
 .align-items-center {
   align-items: center;
@@ -47,13 +67,5 @@
   padding-top: 2rem;
   & > .mat-spinner {
     margin: 0 auto;
-  }
-}
-
-.not-empty-select.mat-selected {
-  color: green !important;
-
-  & > .mat-pseudo-checkbox-checked {
-    background: green !important;
   }
 }

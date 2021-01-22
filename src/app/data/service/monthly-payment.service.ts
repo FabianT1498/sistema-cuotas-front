@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, filter, tap } from 'rxjs/operators';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  map
+} from 'rxjs/operators';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
@@ -22,8 +28,10 @@ export class MonthlyPaymentService {
       .pipe(catchError(handleError<MonthlyPayment[]>('getAll', [])));
   }
 
-  getUnpaidMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {
-    return this.http
+  getUnpaidMonthlyPayments(
+    neighborID: Observable<number>
+  ): Observable<MonthlyPayment[]> {
+    /* return this.http
       .get<MonthlyPayment[]>(
         `${this.monthlyPaymentUrl}/?neighborID=${neighborID}`
       )
@@ -31,7 +39,19 @@ export class MonthlyPaymentService {
         catchError(
           handleError<MonthlyPayment[]>('getUnpaidMonthlyPayments', [])
         )
-      );
+      ); */
+    return neighborID.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      switchMap(id =>
+        this.http.get<MonthlyPayment[]>(this.monthlyPaymentUrl).pipe(
+          map((monthlyPayment, index) => {
+            console.log(`${index}: ${monthlyPayment}`);
+            return monthlyPayment;
+          })
+        )
+      )
+    );
   }
 
   getPaidMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {

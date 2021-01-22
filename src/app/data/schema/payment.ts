@@ -4,47 +4,41 @@ import { Repair } from '@data/schema/repair';
 
 export interface Payment {
   id?: number;
-  neighborID: string;
-  paymentDate: string;
-  amount: number;
+  neighborID: number;
+  paymentDate: string | any;
   paymentMethod: string;
+  amount: number;
   bank?: string;
   paymentID?: string;
-  monthlyPayments?: Array<MonthlyPayment | number>;
-  repairs?: Array<Repair | number>;
-  contributions?: Array<Contribution | number>;
+  monthlyPayments?: Array<MonthlyPayment>;
+  repairs?: Array<Repair>;
+  contributions?: Array<Contribution>;
 }
 
 export class PaymentModel implements Payment {
   id?: number;
-  neighborID: string;
-  paymentDate: string;
+  neighborID: number;
+  paymentDate: string | any;
   amount: number;
   paymentMethod: string;
-  bank?: string;
   paymentID?: string;
-  monthlyPayments?: Array<MonthlyPayment | number>;
-  repairs?: Array<Repair | number>;
-  contributions?: Array<Contribution | number>;
+  bank?: string;
+  monthlyPayments?: Array<MonthlyPayment>;
+  repairs?: Array<Repair>;
+  contributions?: Array<Contribution>;
 
   constructor(source: Payment) {
-    this.id = source.id;
+    this.id = typeof source.id !== 'undefined' ? source.id : -1;
     this.neighborID = source.neighborID;
-    this.paymentDate = source.paymentDate;
+    this.paymentDate =
+      typeof source.paymentDate === 'object'
+        ? source.paymentDate.format('YYYY-MM-DD')
+        : source.paymentDate;
     this.amount = source.amount;
     this.paymentMethod = source.paymentMethod;
     this.bank = source.bank;
-    this.paymentID = source.paymentID;
-    this.monthlyPayments = source.monthlyPayments.map(
-      (el: MonthlyPayment) => el.id
-    );
-    this.repairs = source.repairs.map((el: Repair) => el.id);
-    this.contributions = source.contributions.map((el: Contribution) => el.id);
-
-    /*
-     we moved the data manipulation to this separate class,
-     which is also a valid representation of a User model,
-     so no unnecessary clutter here
-    */
+    this.monthlyPayments = source.monthlyPayments;
+    this.repairs = source.repairs;
+    this.contributions = source.contributions;
   }
 }

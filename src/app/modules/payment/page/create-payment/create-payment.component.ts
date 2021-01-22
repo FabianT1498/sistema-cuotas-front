@@ -2,6 +2,7 @@ import {
   Component,
   OnDestroy,
   OnInit,
+  AfterViewInit,
   TemplateRef,
   ViewChild,
   ViewContainerRef,
@@ -15,6 +16,11 @@ import {
   FormControl,
   FormArray
 } from '@angular/forms';
+
+import { SelectionModel } from '@angular/cdk/collections';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
 
 import { map, startWith, takeUntil } from 'rxjs/operators';
 import { combineLatest, Observable, EMPTY, of, Subject } from 'rxjs';
@@ -30,7 +36,7 @@ import { ContributionService } from '@data/service/contribution.service';
 import { MonthlyPayment } from '@data/schema/monthly-payment';
 import { Neighbor } from '@data/schema/neighbor';
 import { Repair } from '@data/schema/repair';
-import { PaymentModel } from '@data/schema/payment';
+import { Payment, PaymentModel } from '@data/schema/payment';
 import { Contribution } from '@data/schema/contribution';
 
 @Component({
@@ -39,7 +45,12 @@ import { Contribution } from '@data/schema/contribution';
   styleUrls: ['./create-payment.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class CreatePaymentComponent implements OnInit, OnDestroy {
+export class CreatePaymentComponent
+  implements OnInit, OnDestroy, AfterViewInit {
+  /** Signal to unsubscribe from all observables */
+  private signal$: Subject<any>;
+
+  /** Neighbor form section */
   @ViewChild('neighborNotFound') neighborNotFoundComp: TemplateRef<any>;
   @ViewChild('neighborFound') neighborFoundComp: TemplateRef<any>;
   @ViewChild('newNeighbor') newNeighborComp: TemplateRef<any>;
@@ -47,24 +58,51 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
   neighbor: Neighbor;
   neighborDNI$: Subject<string>;
+  neighborID$: Subject<number>;
 
-  private signal$: Subject<any>;
-
+  /** FORM GROUPS */
   paymentForm: FormGroup;
   paymentFormArr: FormArray;
   neighborGroup: FormGroup;
+  paymentGroup: FormGroup;
 
-  isLoading: boolean;
-  paymentMethods: Array<String>;
-  contributionsAdded: Array<Contribution>;
-
+  /** Observable data */
+  paymentMethods: Array<any>;
   banks$: Observable<Array<String>>;
-  neighbors$: Observable<Neighbor[]>;
-  filteredNeighbors$: Observable<Neighbor[]>;
-  neighborFilter$: Observable<string>;
-  monthlyPayments$: Observable<MonthlyPayment[]>;
-  repairs$: Observable<Repair[]>;
-  contributions$: Observable<Contribution[]>;
+
+  /** Monthly payments table */
+  monthlyPaymentsTblColumns: string[];
+  totalMonthlyPaymentsTblColumns: string[];
+  monthlyPaymentsSource: MatTableDataSource<MonthlyPayment>;
+  monthlyPaymentsSelection: SelectionModel<MonthlyPayment>;
+  @ViewChild(MatPaginator) monthlyPaymentsTblpaginator: MatPaginator;
+  @ViewChild(MatSort) monthlyPaymentsTblSort: MatSort;
+
+  /** Repairs table */
+  repairsTblColumns: string[];
+  totalRepairsTblColumns: string[];
+  repairsSource: MatTableDataSource<Repair>;
+  repairsSelection: SelectionModel<Repair>;
+  @ViewChild(MatPaginator) repairsTblpaginator: MatPaginator;
+  @ViewChild(MatSort) repairsTblSort: MatSort;
+
+  /** Contributions table */
+  neighborContributions: any;
+  contributionsTblColumns: string[];
+  totalContributionsTblColumns: string[];
+  contributionsSource: MatTableDataSource<Contribution>;
+  @ViewChild(MatPaginator) contributionsTblpaginator: MatPaginator;
+
+  /** Summary table */
+  summarySource: MatTableDataSource<Contribution>;
+  summaryElements: any[];
+  summaryTblColumns: string[];
+  totalSummaryTblColumns: string[];
+  availableSummaryTblColumns: string[];
+  remaningSummaryTblColumns: string[];
+
+  /** Remaining Amount */
+  amountRemaining: number;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -75,24 +113,115 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     private repairService: RepairService,
     private contributionService: ContributionService
   ) {
-    this.paymentMethods = Array('Efectivo', 'Pago movil', 'Transferencia');
-    this.contributionsAdded = Array();
+    this.paymentMethods = [
+      { id: 0, name: 'Efectivo' },
+      { id: 1, name: 'Pago movil' },
+      { id: 2, name: 'Transferencia' }
+    ];
+    this.monthlyPaymentsSelection = new SelectionModel<MonthlyPayment>(
+      true,
+      []
+    );
+    this.monthlyPaymentsSource = new MatTableDataSource<MonthlyPayment>();
+    this.monthlyPaymentsTblColumns = [
+      'select',
+      'position',
+      'month',
+      'year',
+      'cost'
+    ];
+    this.totalMonthlyPaymentsTblColumns = [
+      'emptyFooter',
+      'totalTitle',
+      'emptyFooter',
+      'emptyFooter',
+      'totalCost'
+    ];
+
+    this.repairsSelection = new SelectionModel<Repair>(true, []);
+    this.repairsSource = new MatTableDataSource<Repair>();
+    this.repairsTblColumns = ['select', 'position', 'repair', 'date', 'cost'];
+    this.totalRepairsTblColumns = [
+      'emptyFooter',
+      'totalTitle',
+      'emptyFooter',
+      'emptyFooter',
+      'totalCost'
+    ];
+
+    this.neighborContributions = {};
+    this.contributionsSource = new MatTableDataSource<Contribution>();
+    this.contributionsTblColumns = [
+      'position',
+      'contributionTitle',
+      'contributionAmount'
+    ];
+    this.totalContributionsTblColumns = [
+      'emptyFooter',
+      'totalTitle',
+      'totalContribution'
+    ];
+
+    this.summarySource = new MatTableDataSource<any>();
+    this.summaryElements = [];
+    this.summaryTblColumns = ['title', 'amountTitle'];
+    this.totalSummaryTblColumns = ['totalTitle', 'totalSummary'];
+    this.availableSummaryTblColumns = ['availableTitle', 'available'];
+    this.remaningSummaryTblColumns = ['remainingTitle', 'remainingSummary'];
   }
 
   ngOnInit() {
     this.buildForm();
-    this.loadInitialData();
+    // this.loadInitialData();
     this.setupFormListeners();
   }
 
-  private loadInitialData() {
-    this.contributions$ = this.contributionService.getAll();
+  ngAfterViewInit() {
+    this.monthlyPaymentsSource.paginator = this.monthlyPaymentsTblpaginator;
+    this.monthlyPaymentsSource.sort = this.monthlyPaymentsTblSort;
+
+    this.repairsSource.paginator = this.repairsTblpaginator;
+    this.repairsSource.sort = this.repairsTblSort;
+
+    this.contributionsSource.paginator = this.contributionsTblpaginator;
+  }
+
+  private buildForm(): void {
+    this.paymentFormArr = this.formBuilder.array([
+      this.createNeighborGroup(),
+      this.createPaymentGroup()
+    ]);
+    this.neighborGroup = this.paymentFormArr.get([0]) as FormGroup;
+    this.paymentGroup = this.paymentFormArr.get([1]) as FormGroup;
+
+    this.paymentForm = this.formBuilder.group({
+      paymentFormArr: this.paymentFormArr
+    });
+  }
+
+  private loadInitialData() {}
+
+  clearFormData() {
+    this.monthlyPaymentsSelection.clear();
+    this.repairsSelection.clear();
+    this.neighborContributions = {};
   }
 
   private setupFormListeners() {
     this.signal$ = new Subject();
 
     this.neighborDNI$ = new Subject<string>();
+    this.neighborID$ = new Subject<number>();
+
+    this.contributionService
+      .getAll()
+      .pipe(takeUntil(this.signal$))
+      .subscribe((contribs: Contribution[]) => {
+        this.contributionsSource.data = contribs.map((el, index) => ({
+          ...el,
+          position: index + 1
+        }));
+      });
 
     this.neighborService
       .getNeighbor(this.neighborDNI$)
@@ -102,35 +231,39 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
         if (neighbor.length > 0) {
           this.neighbor = neighbor[0];
+          this.neighborGroup.controls['neighborID'].setValue(this.neighbor.id);
+          this.neighborID$.next(this.neighbor.id);
           this.removeNeighborControls();
           view = this.neighborFoundComp.createEmbeddedView(null);
         } else {
           view = this.neighborNotFoundComp.createEmbeddedView(null);
+          this.neighborGroup.controls['neighborID'].setValue(-1);
         }
 
+        this.clearFormData();
         this.neighborContainer.remove();
         this.neighborContainer.insert(view);
-
-        console.log(this.paymentForm.controls['paymentFormArr'].get([0]));
       });
-    /* this.neighborFilter$ = this.paymentForm.get('neighbor').valueChanges.pipe(
-      startWith(''),
-      map(value => (typeof value === 'string' ? value : value.fullName))
-    );
 
-    this.filteredNeighbors$ = combineLatest(
-      this.neighbors$,
-      this.neighborFilter$
-    ).pipe(
-      map(([neighbors, filterString]) =>
-        neighbors.filter(
-          neighbor =>
-            neighbor.fullName
-              .toLowerCase()
-              .indexOf(filterString.toLowerCase()) !== -1
-        )
-      )
-    ); */
+    this.monthlyPaymentService
+      .getUnpaidMonthlyPayments(this.neighborID$)
+      .pipe(takeUntil(this.signal$))
+      .subscribe((monthlyPayments: MonthlyPayment[]) => {
+        this.monthlyPaymentsSource.data = monthlyPayments.map((el, index) => ({
+          ...el,
+          position: index + 1
+        }));
+      });
+
+    this.repairService
+      .getUnpaidRepairs(this.neighborID$)
+      .pipe(takeUntil(this.signal$))
+      .subscribe((repairs: Repair[]) => {
+        this.repairsSource.data = repairs.map((el, index) => ({
+          ...el,
+          position: index + 1
+        }));
+      });
   }
 
   private createNeighborGroup(): FormGroup {
@@ -142,27 +275,15 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
           Validators.pattern('^[VE|ve]-[0-9]+'),
           Validators.maxLength(10)
         ]
-      ]
+      ],
+      neighborID: ['-1', [Validators.required, Validators.min(0)]]
     });
   }
 
-  private buildForm(): void {
-    this.paymentForm = this.formBuilder.group({
-      paymentFormArr: this.formBuilder.array([this.createNeighborGroup()])
-    });
-
-    /* this.paymentForm = this.formBuilder.group({
-      neighbor: ['', Validators.required],
-      neighborID: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern('^[0-9]+$'),
-          Validators.maxLength(8)
-        ]
-      ],
+  private createPaymentGroup(): FormGroup {
+    return this.formBuilder.group({
       paymentDate: ['', Validators.required],
-      paymentMethod: ['', Validators.required],
+      paymentMethod: ['0', Validators.required],
       amount: [
         0,
         [
@@ -170,12 +291,8 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
           Validators.min(0),
           Validators.pattern('^[0-9]+(.[0-9]+)?$')
         ]
-      ],
-      monthlyPayments: [[]],
-      repairs: [[]],
-      contribution: [''],
-      contributionForm: this.formBuilder.array([])
-    }); */
+      ]
+    });
   }
 
   get f() {
@@ -187,11 +304,6 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   }
 
   private addNeighborControls() {
-    if (typeof this.neighborGroup === 'undefined') {
-      this.paymentFormArr = this.paymentForm.get('paymentFormArr') as FormArray;
-      this.neighborGroup = this.paymentFormArr.get([0]) as FormGroup;
-    }
-
     this.neighborGroup.addControl(
       'fullName',
       new FormControl('', [
@@ -217,12 +329,10 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   }
 
   private removeNeighborControls() {
-    if (typeof this.neighborGroup !== 'undefined') {
-      this.neighborGroup.removeControl('fullName');
-      this.neighborGroup.removeControl('phoneNumber');
-      this.neighborGroup.removeControl('email');
-      this.neighborGroup.removeControl('houseNumber');
-    }
+    this.neighborGroup.removeControl('fullName');
+    this.neighborGroup.removeControl('phoneNumber');
+    this.neighborGroup.removeControl('email');
+    this.neighborGroup.removeControl('houseNumber');
   }
 
   addNeighbor() {
@@ -232,38 +342,154 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     this.neighborContainer.insert(view);
   }
 
-  neighborOptionSelected($event) {
-    const neighborID = $event.option.value.neighborID;
+  /** ----- MONTHLY PAYMENTS TABLE METHODS ---- */
 
-    this.paymentForm.get('neighborID').setValue(neighborID);
-
-    // For test purpose get all monthly Payments
-    this.monthlyPayments$ = this.monthlyPaymentService.getAll();
-    // this.monthlyPayments$ = this.monthlyPaymentService.getUnpaidMonthlyPayments(neighborID);
-
-    // For test purpose get all repairs
-    this.repairs$ = this.repairService.getAll();
+  /** Whether the number of selected elements matches the total number of rows. */
+  isAllMonthlyPaymentsSelected() {
+    const numSelected = this.monthlyPaymentsSelection.selected.length;
+    const numRows = this.monthlyPaymentsSource.data.length;
+    return numSelected === numRows;
   }
 
-  displayNeighborName(neighbor) {
-    return neighbor && neighbor.fullName ? neighbor.fullName : '';
+  /** Selects all rows if they are not all selected; otherwise clear selection. */
+  masterToggleMonthlyPaymentsTbl() {
+    this.isAllMonthlyPaymentsSelected()
+      ? this.monthlyPaymentsSelection.clear()
+      : this.monthlyPaymentsSource.data.forEach(row =>
+          this.monthlyPaymentsSelection.select(row)
+        );
   }
+
+  getTotalCostMonthlyPayments() {
+    const costs = this.monthlyPaymentsSelection.selected.map(el => el.cost);
+    return costs.reduce((accumulator, el) => accumulator + el, 0);
+  }
+
+  /** The label for the checkbox on the passed row */
+  checkboxLabelMonthlyPaymentsTbl(row?: any): string {
+    if (!row) {
+      return `${
+        this.isAllMonthlyPaymentsSelected() ? 'select' : 'deselect'
+      } all`;
+    }
+    return `${
+      this.monthlyPaymentsSelection.isSelected(row) ? 'deselect' : 'select'
+    } row ${row.position + 1}`;
+  }
+
+  toggleMonthlyPayment($event, row) {
+    this.monthlyPaymentsSelection.toggle(row);
+  }
+
+  /** ----- REPAIRS TABLE METHODS ---- */
+
+  /** Whether the number of selected elements matches the total number of rows. */
+  isAllRepairsSelected() {
+    const numSelected = this.repairsSelection.selected.length;
+    const numRows = this.repairsSource.data.length;
+    return numSelected === numRows;
+  }
+
+  /** Selects all rows if they are not all selected; otherwise clear selection. */
+  masterToggleRepairsTbl() {
+    this.isAllRepairsSelected()
+      ? this.repairsSelection.clear()
+      : this.repairsSource.data.forEach(row =>
+          this.repairsSelection.select(row)
+        );
+  }
+
+  getTotalCostRepairs() {
+    const costs = this.repairsSelection.selected.map(el => el.cost);
+    return costs.reduce((accumulator, el) => accumulator + el, 0);
+  }
+
+  /** The label for the checkbox on the passed row */
+  checkboxLabelRepairsTbl(row?: any): string {
+    if (!row) {
+      return `${this.isAllRepairsSelected() ? 'select' : 'deselect'} all`;
+    }
+    return `${
+      this.repairsSelection.isSelected(row) ? 'deselect' : 'select'
+    } row ${row.position + 1}`;
+  }
+
+  toggleRepair($event, row) {
+    this.repairsSelection.toggle(row);
+  }
+
+  /** ----- CONTRIBUTIONS TABLE METHODS ---- */
+  getTotalContribution() {
+    // Se puede implementar de mejor manera
+    return Object.values(this.neighborContributions).reduce(
+      (accumulator: number, el: number) => accumulator + el,
+      0
+    );
+  }
+
+  private getContributedContributions() {
+    return this.contributionsSource.data.reduce((arr, el, index) => {
+      if (this.neighborContributions[index] > 0) {
+        arr.push({ ...el, amount: this.neighborContributions[index] });
+      }
+      return arr;
+    }, []);
+  }
+
+  /* ---------------SUMMARY  TABLE  METHODS---------------- */
+
+  getTotalSummary() {
+    return this.summaryElements
+      .map(el => el.amount)
+      .reduce((accumulator, el) => accumulator + el, 0);
+  }
+
+  getAmountRemaining() {
+    return this.paymentGroup.controls['amount'].value - this.getTotalSummary();
+  }
+
+  isEmptyArr(arr: any[]): boolean {
+    return arr.length === 0;
+  }
+
+  receiveStep($event) {
+    if (this.isLastStep($event.selectedIndex)) {
+      this.summaryElements = this.monthlyPaymentsSelection.selected.map(el => {
+        return { title: `${el.month} ${el.year}`, amount: el.cost };
+      });
+
+      this.summaryElements = this.summaryElements.concat(
+        this.repairsSelection.selected.map(el => {
+          return { title: el.title, amount: el.cost };
+        })
+      );
+
+      this.summaryElements = this.summaryElements.concat(
+        this.getContributedContributions()
+      );
+      console.log(this.summaryElements);
+
+      this.summarySource = new MatTableDataSource<any>(this.summaryElements);
+    }
+  }
+
+  private isLastStep(index): boolean {
+    return index === 5;
+  }
+
+  /*  --------------------------------------------- */
 
   get isElectronicPayment(): boolean {
-    const paymentMethod = this.paymentForm.get('paymentMethod')
-      ? this.paymentForm.get('paymentMethod').value
-      : '';
-
-    return paymentMethod !== '' && paymentMethod !== this.paymentMethods[0];
+    return this.paymentGroup.get('paymentMethod').value !== '0';
   }
 
   paymentMethodChange($event) {
     if (this.isElectronicPayment) {
-      this.paymentForm.addControl(
+      this.paymentGroup.addControl(
         'bank',
         new FormControl('', Validators.required)
       );
-      this.paymentForm.addControl(
+      this.paymentGroup.addControl(
         'paymentID',
         new FormControl('', [
           Validators.required,
@@ -272,105 +498,36 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       );
       this.banks$ = this.selectOptionsService.getOptions('banks');
     } else {
-      this.paymentForm.removeControl('bank');
-      this.paymentForm.removeControl('paymentID');
+      this.paymentGroup.removeControl('bank');
+      this.paymentGroup.removeControl('paymentID');
     }
-  }
-
-  displayContribTitle(contribution) {
-    return contribution && contribution.title ? contribution.title : '';
-  }
-
-  addContribution() {
-    if (this.paymentForm.get('contribution')) {
-      const value = this.paymentForm.get('contribution').value;
-
-      if (value && typeof value === 'object') {
-        // check if doesn't exist the same element
-        if (
-          this.contributionsAdded.findIndex(el => el.id === value.id) === -1
-        ) {
-          this.contributionsAdded.push(value);
-          const contribForm = this.paymentForm.get(
-            'contributionForm'
-          ) as FormArray;
-          const control = new FormControl(0, [
-            Validators.required,
-            Validators.min(0),
-            Validators.pattern('^[0-9]+(.[0-9]+)?$')
-          ]);
-
-          contribForm.push(control);
-        }
-      }
-
-      this.paymentForm.get('contribution').setValue('');
-    }
-  }
-
-  deleteContribution(index) {
-    this.contributionsAdded.splice(index, 1);
-    const formArray = this.paymentForm.get('contributionForm') as FormArray;
-    formArray.removeAt(index);
-  }
-
-  private isValidAmount(): boolean {
-    const reducer = (accumulator, currentValue) => accumulator + currentValue;
-    let acc = 0;
-
-    // get arrays costs and contributions
-    const formArray = this.paymentForm.get('contributionForm') as FormArray;
-    const arrContrib = formArray.controls.map(el => el.value);
-    const arrRepairs = this.paymentForm.get('repairs').value.map(el => el.cost);
-    const arrMonthlyPayment = this.paymentForm
-      .get('monthlyPayments')
-      .value.map(el => el.cost);
-
-    // adding all debits
-    acc = arrContrib.reduce(reducer);
-    acc = arrRepairs.reduce(reducer, acc);
-    acc = arrMonthlyPayment.reduce(reducer, acc);
-
-    console.log(`El debito es de -${acc}`);
-
-    // get amount payment
-    const amount = this.paymentForm.get('amount').value;
-
-    return amount > acc ? true : false;
-  }
-
-  onClear() {
-    const formKeys = {
-      neighbor: '',
-      neighborID: '',
-      paymentDate: '',
-      paymentMethod: '',
-      amount: 0
-    };
-
-    if (this.isElectronicPayment) {
-      this.paymentForm.removeControl('bank');
-      this.paymentForm.removeControl('paymentID');
-    }
-
-    this.paymentForm.reset(formKeys);
   }
 
   createPayment() {
-    if (this.isValidAmount()) console.log('Cantidad valida');
-    else {
-      console.log('cantidad invalida');
-      return;
+    if (this.getAmountRemaining() < 0) {
+      console.log('El pago no puede ser procesado');
+    } else {
+      console.log('El pago fue procesado');
+
+      const payment: Payment = {
+        ...this.paymentGroup.value,
+        neighborID: this.neighborGroup.controls['neighborID'].value,
+        monthlyPayments: this.monthlyPaymentsSelection.selected,
+        repairs: this.repairsSelection.selected,
+        contributions: this.getContributedContributions()
+      };
+
+      const paymentModel = new PaymentModel(payment);
+      console.log(paymentModel);
     }
 
-    const payment = this.paymentForm.value;
-
+    /*
     delete payment.neighbor;
 
     const paymentModel = new PaymentModel(payment);
 
     // this.isLoading = true;
-    console.log(paymentModel);
+    console.log(paymentModel); */
   }
 
   ngOnDestroy(): void {
