@@ -1,6 +1,5 @@
 export interface Contribution {
-  id?: number;
+  id: number;
   title: string;
-  date: string;
   amount?: number;
 }

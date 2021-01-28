@@ -22,8 +22,22 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 
-import { map, startWith, takeUntil } from 'rxjs/operators';
-import { combineLatest, Observable, EMPTY, of, Subject } from 'rxjs';
+import {
+  catchError,
+  finalize,
+  map,
+  startWith,
+  takeUntil,
+  tap
+} from 'rxjs/operators';
+import {
+  combineLatest,
+  Observable,
+  EMPTY,
+  of,
+  Subject,
+  throwError
+} from 'rxjs';
 
 /** SERVICES */
 import { SelectOptionsService } from '@app/service/select-options.service';
@@ -31,10 +45,11 @@ import { NeighborService } from '@data/service/neightbor.service';
 import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
 import { RepairService } from '@data/service/repair.service';
 import { ContributionService } from '@data/service/contribution.service';
+import { PaymentService } from '@data/service/payment.service';
 
 /** SCHEMAS */
 import { MonthlyPayment } from '@data/schema/monthly-payment';
-import { Neighbor } from '@data/schema/neighbor';
+import { Neighbor, NeighborModel } from '@data/schema/neighbor';
 import { Repair } from '@data/schema/repair';
 import { Payment, PaymentModel } from '@data/schema/payment';
 import { Contribution } from '@data/schema/contribution';
@@ -50,13 +65,18 @@ export class CreatePaymentComponent
   /** Signal to unsubscribe from all observables */
   private signal$: Subject<any>;
 
+  isLoading: boolean;
+
+  /* New payment subject */
+  newRecord$: Subject<any>;
+
   /** Neighbor form section */
   @ViewChild('neighborNotFound') neighborNotFoundComp: TemplateRef<any>;
   @ViewChild('neighborFound') neighborFoundComp: TemplateRef<any>;
   @ViewChild('newNeighbor') newNeighborComp: TemplateRef<any>;
   @ViewChild('neighborContainer', { read: ViewContainerRef }) neighborContainer;
 
-  neighbor: Neighbor;
+  neighborFullName: string;
   neighborDNI$: Subject<string>;
   neighborID$: Subject<number>;
 
@@ -111,8 +131,11 @@ export class CreatePaymentComponent
     private neighborService: NeighborService,
     private monthlyPaymentService: MonthlyPaymentService,
     private repairService: RepairService,
-    private contributionService: ContributionService
+    private contributionService: ContributionService,
+    private paymentService: PaymentService
   ) {
+    this.isLoading = false;
+
     this.paymentMethods = [
       { id: 0, name: 'Efectivo' },
       { id: 1, name: 'Pago movil' },
@@ -210,10 +233,27 @@ export class CreatePaymentComponent
   private setupFormListeners() {
     this.signal$ = new Subject();
 
+    this.newRecord$ = new Subject<any>();
+
     this.neighborDNI$ = new Subject<string>();
     this.neighborID$ = new Subject<number>();
 
-    this.contributionService
+    this.paymentService
+      .createPayment(this.newRecord$)
+      .pipe(
+        takeUntil(this.signal$),
+        tap(record => this.router.navigate(['/pagos'])),
+        finalize(() => (this.isLoading = false)),
+        catchError(error => {
+          console.log('Caught in CatchError. Throwing error');
+          return throwError(error);
+        })
+      )
+      .subscribe(res => {
+        console.log(res);
+      });
+
+    /* this.contributionService
       .getAll()
       .pipe(takeUntil(this.signal$))
       .subscribe((contribs: Contribution[]) => {
@@ -221,18 +261,19 @@ export class CreatePaymentComponent
           ...el,
           position: index + 1
         }));
-      });
+      }); */
 
     this.neighborService
-      .getNeighbor(this.neighborDNI$)
+      .getNeighborByDNI(this.neighborDNI$)
       .pipe(takeUntil(this.signal$))
-      .subscribe((neighbor: any) => {
+      .subscribe((res: any) => {
         let view;
 
-        if (neighbor.length > 0) {
-          this.neighbor = neighbor[0];
-          this.neighborGroup.controls['neighborID'].setValue(this.neighbor.id);
-          this.neighborID$.next(this.neighbor.id);
+        if (res.data) {
+          const neighbor = res.data;
+          this.neighborGroup.controls['neighborID'].setValue(neighbor.id);
+          this.neighborID$.next(neighbor.id);
+          this.neighborFullName = neighbor.fullname;
           this.removeNeighborControls();
           view = this.neighborFoundComp.createEmbeddedView(null);
         } else {
@@ -245,7 +286,7 @@ export class CreatePaymentComponent
         this.neighborContainer.insert(view);
       });
 
-    this.monthlyPaymentService
+    /* this.monthlyPaymentService
       .getUnpaidMonthlyPayments(this.neighborID$)
       .pipe(takeUntil(this.signal$))
       .subscribe((monthlyPayments: MonthlyPayment[]) => {
@@ -253,9 +294,9 @@ export class CreatePaymentComponent
           ...el,
           position: index + 1
         }));
-      });
+      }); */
 
-    this.repairService
+    /* this.repairService
       .getUnpaidRepairs(this.neighborID$)
       .pipe(takeUntil(this.signal$))
       .subscribe((repairs: Repair[]) => {
@@ -263,7 +304,7 @@ export class CreatePaymentComponent
           ...el,
           position: index + 1
         }));
-      });
+      }); */
   }
 
   private createNeighborGroup(): FormGroup {
@@ -276,7 +317,7 @@ export class CreatePaymentComponent
           Validators.maxLength(10)
         ]
       ],
-      neighborID: ['-1', [Validators.required, Validators.min(0)]]
+      neighborID: ['-1', [Validators.required]]
     });
   }
 
@@ -490,7 +531,7 @@ export class CreatePaymentComponent
         new FormControl('', Validators.required)
       );
       this.paymentGroup.addControl(
-        'paymentID',
+        'referenceNumber',
         new FormControl('', [
           Validators.required,
           Validators.pattern('^([0-9]|[A-Z]|[a-z])+$')
@@ -499,7 +540,7 @@ export class CreatePaymentComponent
       this.banks$ = this.selectOptionsService.getOptions('banks');
     } else {
       this.paymentGroup.removeControl('bank');
-      this.paymentGroup.removeControl('paymentID');
+      this.paymentGroup.removeControl('referenceNumber');
     }
   }
 
@@ -509,9 +550,10 @@ export class CreatePaymentComponent
     } else {
       console.log('El pago fue procesado');
 
+      this.isLoading = true;
+
       const payment: Payment = {
         ...this.paymentGroup.value,
-        neighborID: this.neighborGroup.controls['neighborID'].value,
         monthlyPayments: this.monthlyPaymentsSelection.selected,
         repairs: this.repairsSelection.selected,
         contributions: this.getContributedContributions()
@@ -519,15 +561,16 @@ export class CreatePaymentComponent
 
       const paymentModel = new PaymentModel(payment);
       console.log(paymentModel);
+
+      const neighbor: Neighbor = {
+        ...this.neighborGroup.value
+      };
+
+      const neighborModel = new NeighborModel(neighbor);
+      console.log(neighborModel);
+
+      this.newRecord$.next({ paymentModel, neighborModel });
     }
-
-    /*
-    delete payment.neighbor;
-
-    const paymentModel = new PaymentModel(payment);
-
-    // this.isLoading = true;
-    console.log(paymentModel); */
   }
 
   ngOnDestroy(): void {

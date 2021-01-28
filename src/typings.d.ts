@@ -4,4 +4,8 @@ interface NodeModule {
   id: string;
 }
 
+interface Window {
+  require: NodeRequire;
+}
+
 declare module '*';

@@ -6,10 +6,10 @@ export interface Payment {
   id?: number;
   neighborID: number;
   paymentDate: string | any;
-  paymentMethod: string;
+  paymentMethod: number;
   amount: number;
-  bank?: string;
-  paymentID?: string;
+  bank?: string | null;
+  referenceNumber?: string | null;
   monthlyPayments?: Array<MonthlyPayment>;
   repairs?: Array<Repair>;
   contributions?: Array<Contribution>;
@@ -20,9 +20,9 @@ export class PaymentModel implements Payment {
   neighborID: number;
   paymentDate: string | any;
   amount: number;
-  paymentMethod: string;
-  paymentID?: string;
-  bank?: string;
+  paymentMethod: number;
+  referenceNumber?: string | null;
+  bank?: string | null;
   monthlyPayments?: Array<MonthlyPayment>;
   repairs?: Array<Repair>;
   contributions?: Array<Contribution>;
@@ -36,7 +36,13 @@ export class PaymentModel implements Payment {
         : source.paymentDate;
     this.amount = source.amount;
     this.paymentMethod = source.paymentMethod;
-    this.bank = source.bank;
+
+    this.bank = typeof source.bank !== 'undefined' ? source.bank : null;
+    this.referenceNumber =
+      typeof source.referenceNumber !== 'undefined'
+        ? source.referenceNumber
+        : null;
+
     this.monthlyPayments = source.monthlyPayments;
     this.repairs = source.repairs;
     this.contributions = source.contributions;

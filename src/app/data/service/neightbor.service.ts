@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import {
   catchError,
   debounceTime,
@@ -11,10 +11,11 @@ import {
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
+import { IpcService } from '@app/service/ipc.service';
+
 import { Neighbor } from '../schema/neighbor';
 
 import { handleError } from './handleError';
-import { TOUCH_BUFFER_MS } from '@angular/cdk/a11y';
 
 @Injectable({
   providedIn: 'root'
@@ -22,7 +23,7 @@ import { TOUCH_BUFFER_MS } from '@angular/cdk/a11y';
 export class NeighborService {
   private neighborsUrl = 'api/neighbors'; // URL to web api
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private ipc: IpcService) {}
 
   getAll(): Observable<Neighbor[]> {
     return this.http
@@ -30,15 +31,16 @@ export class NeighborService {
       .pipe(catchError(handleError<Neighbor[]>('getAll', [])));
   }
 
-  getNeighbor(dni: Observable<string>): Observable<Neighbor> {
+  getNeighborByDNI(dni: Observable<string>): Observable<any> {
     return dni.pipe(
       debounceTime(400),
       distinctUntilChanged(),
-      switchMap(term =>
-        this.http
-          .get<Neighbor>(`${this.neighborsUrl}/?dni=^${term}`)
-          .pipe(map(neighbor => neighbor))
-      )
+      filter((query: string) => query && query.length > 7),
+      switchMap(term => {
+        return from(this.ipc.invoke('find-neighbor-by-dni', term)).pipe(
+          map(res => res)
+        );
+      })
     );
   }
 }
