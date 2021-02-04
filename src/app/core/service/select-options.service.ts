@@ -6,10 +6,10 @@ import selectsOptions from './json/select-options.json';
   providedIn: 'root'
 })
 export class SelectOptionsService {
-  getOptions(select: string): Observable<Array<String>> {
-    const selectOptions = selectsOptions.find(el => el.select === select);
+  getOptions(select: string): Observable<Array<any>> {
+    const selectOptions = selectsOptions[select];
 
-    if (selectOptions) return of(selectOptions.options);
+    if (typeof selectOptions !== 'undefined') return of(selectOptions);
 
     return throwError(`doesn't exist select`);
   }

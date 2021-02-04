@@ -28,11 +28,7 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   Electronic_Payment.associate = function(db) {
-    this.belongsTo(db.payments, {
-      foreignKey: 'payment_id',
-      onDelete: 'CASCADE',
-      onUpdate: 'CASCADE'
-    });
+    this.belongsTo(db.payments);
   };
 
   return Electronic_Payment;

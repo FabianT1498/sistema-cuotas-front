@@ -10,6 +10,7 @@ import { Payment, PaymentModel } from '../schema/payment';
 
 import { handleError } from './handleError';
 import { MonthlyPayment } from '@data/schema/monthly-payment';
+import { PaymentSearch } from '@data/interface/search-payments';
 
 @Injectable({
   providedIn: 'root'
@@ -19,11 +20,35 @@ export class PaymentService {
 
   constructor(private http: HttpClient, private ipc: IpcService) {}
 
-  /* getAll(): Observable<Payment[]> {
-    return this.http
-      .get<Payment[]>(this.paymentsUrl)
-      .pipe(catchError(handleError<MonthlyPayment[]>('getAll', [])));
-  } */
+  getPayments(data: Observable<PaymentSearch>): Observable<any> {
+    return data.pipe(
+      switchMap(req => {
+        console.log(req);
+        return from(
+          this.ipc.invoke('get-payments', ...Object.values(req))
+        ).pipe(
+          map(res => {
+            if (res.status === 0) {
+              throw new Error(res.message);
+            }
+            console.log(res);
+            return res;
+          })
+        );
+      })
+    );
+  }
+
+  getPaymentsCount(): Observable<number> {
+    return from(this.ipc.invoke('get-payments-count')).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+        return res.data;
+      })
+    );
+  }
 
   createPayment(data: Observable<any>): Observable<any> {
     return data.pipe(
@@ -33,6 +58,7 @@ export class PaymentService {
             if (res.status === 0) {
               throw new Error(res.message);
             }
+            console.log(res);
             return res;
           })
         )

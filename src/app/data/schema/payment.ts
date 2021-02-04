@@ -6,9 +6,9 @@ export interface Payment {
   id?: number;
   neighborID: number;
   paymentDate: string | any;
-  paymentMethod: number;
-  amount: number;
-  bank?: string | null;
+  paymentMethod: string;
+  amount: number | null;
+  bank?: string;
   referenceNumber?: string | null;
   monthlyPayments?: Array<MonthlyPayment>;
   repairs?: Array<Repair>;
@@ -20,7 +20,7 @@ export class PaymentModel implements Payment {
   neighborID: number;
   paymentDate: string | any;
   amount: number;
-  paymentMethod: number;
+  paymentMethod: string;
   referenceNumber?: string | null;
   bank?: string | null;
   monthlyPayments?: Array<MonthlyPayment>;

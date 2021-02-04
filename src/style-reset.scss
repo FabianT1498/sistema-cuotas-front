@@ -18,3 +18,21 @@ code {
     left: 4px;
   }
 }
+
+/* Chrome, Safari, Edge, Opera */
+input.right-align::-webkit-outer-spin-button,
+input.right-align::-webkit-inner-spin-button {
+  display: none;
+}
+
+input.right-align {
+  -moz-appearance: textfield;
+}
+
+table {
+  width: 100%;
+}
+
+tr.mat-footer-row {
+  font-weight: bold;
+}

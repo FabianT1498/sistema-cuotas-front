@@ -3,12 +3,16 @@ import { Routes, RouterModule } from '@angular/router';
 
 import { CreatePaymentComponent } from './page/create-payment/create-payment.component';
 import { PaymentComponent } from './page/payment.component';
+import { PaymentResolver } from './payment-resolver.service';
 
 export const routes: Routes = [
   {
     path: '',
     component: PaymentComponent,
-    pathMatch: 'full'
+    pathMatch: 'full',
+    resolve: {
+      paymentsCount: PaymentResolver
+    }
   },
   {
     path: 'crear',

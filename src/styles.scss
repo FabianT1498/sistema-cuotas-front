@@ -10,6 +10,10 @@
 @import './styles/themes/black-theme.scss';
 @import './styles/themes/light-theme.scss';
 
+// import custom styles
+@import './assets/scss/base/typography';
+@import './assets/scss/layout/flex';
+
 // import custom component themes here
 @import './styles-reset.scss-theme.scss';
 @import 'app/modules/home/page/project-item/project-container.component.scss-theme.scss';

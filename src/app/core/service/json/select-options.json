@@ -1,41 +1,73 @@
-[
-  {
-    "select": "banks",
-    "options": [
-      "Banco de Venezuela",
-      "Bancaribe",
-      "Banco provincial",
-      "Banco Bicentenario",
-      "Banco del Tesoro",
-      "Banco Venezolano de Crédito",
-      "Banesco",
-      "Banfoandes",
-      "Banorte",
-      "Banplus",
-      "Casa Propia",
-      "Central Banco Universal",
-      "Corpbanca",
-      "Delsur Banco Universal",
-      "Fondo Común",
-      "Helm Bank de Venezuela",
-      "InverUnion",
-      "Mi Casa",
-      "Asociación Bancaria de Venezuela",
-      "Banco Bolívar",
-      "Banco Canarias de Venezuela",
-      "Banco Central de Venezuela",
-      "Banco Confederado",
-      "Banco de Venezuela Grupo Santander",
-      "Banco del Caribe",
-      "Banco Exterior",
-      "Banco Federal",
-      "Banco Guayana",
-      "Banco Industrial de Venezuela",
-      "Banco Mercantil",
-      "Banco Occidental de Descuento",
-      "Banco Plaza",
-      "Banco Provincial",
-      "Banco Sofitasa"
-    ]
-  }
-]
+{
+  "banks": [
+    {
+      "id": 0,
+      "name": "Banco de Venezuela"
+    },
+    {
+      "id": 1,
+      "name": "Bancaribe"
+    },
+    {
+      "id": 2,
+      "name": "Banco provincial"
+    },
+    {
+      "id": 3,
+      "name": "Banco Bicentenario"
+    },
+    {
+      "id": 4,
+      "name": "Banco del Tesoro"
+    },
+    {
+      "id": 5,
+      "name": "Banco Venezolano de Crédito"
+    },
+    {
+      "id": 6,
+      "name": "Banesco"
+    },
+    {
+      "id": 7,
+      "name": "Bancaribe"
+    },
+    {
+      "id": 8,
+      "name": "Banfoandes"
+    },
+    {
+      "id": 9,
+      "name": "Banplus"
+    },
+    {
+      "id": 10,
+      "name": "Casa Propia"
+    },
+    {
+      "id": 11,
+      "name": "Central Banco Universal"
+    },
+    {
+      "id": 12,
+      "name": "Banco Central de Venezuela"
+    },
+    {
+      "id": 13,
+      "name": "Banco de Venezuela Grupo Santander"
+    },
+    {
+      "id": 14,
+      "name": "Banco Mercantil"
+    },
+    {
+      "id": 15,
+      "name": "Banco Provincial"
+    }
+  ],
+  "paymentMethods": [
+    { "id": 0, "name": "Efectivo" },
+    { "id": 1, "name": "Pago movil" },
+    { "id": 2, "name": "Transferencia" }
+  ]
+}

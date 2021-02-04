@@ -22,22 +22,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 
-import {
-  catchError,
-  finalize,
-  map,
-  startWith,
-  takeUntil,
-  tap
-} from 'rxjs/operators';
-import {
-  combineLatest,
-  Observable,
-  EMPTY,
-  of,
-  Subject,
-  throwError
-} from 'rxjs';
+import { catchError, finalize, takeUntil, tap } from 'rxjs/operators';
+import { Observable, Subject, throwError } from 'rxjs';
 
 /** SERVICES */
 import { SelectOptionsService } from '@app/service/select-options.service';
@@ -87,8 +73,8 @@ export class CreatePaymentComponent
   paymentGroup: FormGroup;
 
   /** Observable data */
-  paymentMethods: Array<any>;
-  banks$: Observable<Array<String>>;
+  paymentMethods$: Observable<Array<any>>;
+  banks$: Observable<Array<any>>;
 
   /** Monthly payments table */
   monthlyPaymentsTblColumns: string[];
@@ -136,11 +122,6 @@ export class CreatePaymentComponent
   ) {
     this.isLoading = false;
 
-    this.paymentMethods = [
-      { id: 0, name: 'Efectivo' },
-      { id: 1, name: 'Pago movil' },
-      { id: 2, name: 'Transferencia' }
-    ];
     this.monthlyPaymentsSelection = new SelectionModel<MonthlyPayment>(
       true,
       []
@@ -195,7 +176,7 @@ export class CreatePaymentComponent
 
   ngOnInit() {
     this.buildForm();
-    // this.loadInitialData();
+    this.loadInitialData();
     this.setupFormListeners();
   }
 
@@ -222,7 +203,12 @@ export class CreatePaymentComponent
     });
   }
 
-  private loadInitialData() {}
+  private loadInitialData() {
+    this.paymentMethods$ = this.selectOptionsService.getOptions(
+      'paymentMethods'
+    );
+    this.banks$ = this.selectOptionsService.getOptions('banks');
+  }
 
   clearFormData() {
     this.monthlyPaymentsSelection.clear();
@@ -537,7 +523,6 @@ export class CreatePaymentComponent
           Validators.pattern('^([0-9]|[A-Z]|[a-z])+$')
         ])
       );
-      this.banks$ = this.selectOptionsService.getOptions('banks');
     } else {
       this.paymentGroup.removeControl('bank');
       this.paymentGroup.removeControl('referenceNumber');

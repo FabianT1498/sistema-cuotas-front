@@ -11,6 +11,7 @@ import {
   FontAwesomeModule,
   FaIconLibrary
 } from '@fortawesome/angular-fontawesome';
+
 import {
   faPlus,
   faEdit,
@@ -37,8 +38,10 @@ import {
   faFileInvoiceDollar,
   faFileExcel
 } from '@fortawesome/free-solid-svg-icons';
+
 import { faMediumM, faGithub } from '@fortawesome/free-brands-svg-icons';
 
+/** COMPONENTS */
 import { ControlMessagesComponent } from './component/control-messages/control-messages.component';
 import { SpinnerComponent } from './component/spinner/spinner.component';
 
@@ -66,6 +69,7 @@ import { SpinnerComponent } from './component/spinner/spinner.component';
 
     ControlMessagesComponent,
     SpinnerComponent,
+
     NgxMaskModule
   ]
 })

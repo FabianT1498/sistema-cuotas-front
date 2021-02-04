@@ -1,26 +1,34 @@
 export interface Neighbor {
   neighborID: number;
-  fullName: string;
   neighborDNI: string;
+  fullName?: string;
   phoneNumber?: string;
   email?: string;
-  houseNumber: string;
+  houseNumber?: string;
 }
 
 export class NeighborModel implements Neighbor {
   neighborID: number;
-  fullName: string;
   neighborDNI: string;
+  fullName?: string;
   phoneNumber?: string;
   email?: string;
-  houseNumber: string;
+  houseNumber?: string;
 
   constructor(source: Neighbor) {
     this.neighborID = source.neighborID;
-    this.fullName = source.fullName;
     this.neighborDNI = source.neighborDNI.toUpperCase();
-    this.phoneNumber = source.phoneNumber;
-    this.email = source.email;
-    this.houseNumber = source.houseNumber.toUpperCase();
+    this.fullName = !this.isUndefined(source.fullName) ? source.fullName : null;
+    this.phoneNumber = !this.isUndefined(source.phoneNumber)
+      ? source.phoneNumber
+      : null;
+    this.email = !this.isUndefined(source.email) ? source.email : null;
+    this.houseNumber = !this.isUndefined(source.houseNumber)
+      ? source.houseNumber.toUpperCase()
+      : null;
+  }
+
+  private isUndefined(attr) {
+    return typeof attr === 'undefined';
   }
 }

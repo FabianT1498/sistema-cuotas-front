@@ -74,6 +74,16 @@ ipcMain.handle('create-payment', async (event, ...args) => {
   return result;
 });
 
+ipcMain.handle('get-payments-count', async (event, ...args) => {
+  const result = await paymentController.getPaymentsCount();
+  return result;
+});
+
+ipcMain.handle('get-payments', async (event, ...args) => {
+  const result = await paymentController.getPayments(...args);
+  return result;
+});
+
 /* Neighbors handle events */
 
 ipcMain.handle('find-neighbor-by-dni', async (event, ...args) => {

@@ -1,4 +1,4 @@
-/* import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   Resolve,
@@ -6,23 +6,20 @@ import {
   RouterStateSnapshot
 } from '@angular/router';
 import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
-import { Project } from '@data/schema/project';
-import { ProjectService } from '@data/service/project.service';
+import { PaymentService } from '@data/service/payment.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ProjectResolver implements Resolve<Project> {
-  constructor(private projectService: ProjectService, private router: Router) {}
+export class PaymentResolver implements Resolve<number> {
+  constructor(private paymentService: PaymentService, private router: Router) {}
 
   resolve(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
-  ): Observable<any> {
-    return this.projectService
-      .getSingle(route.params['id'])
-      .pipe(catchError(err => this.router.navigateByUrl('/')));
+  ): Observable<number> {
+    return this.paymentService.getPaymentsCount().pipe(map(res => res));
   }
-} */
+}

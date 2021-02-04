@@ -27,7 +27,11 @@ module.exports = (sequelize, DataTypes) => {
       onUpdate: 'CASCADE'
     });
 
-    this.hasOne(db.electronic_payments);
+    this.hasOne(db.electronic_payments, {
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      foreignKey: 'payment_id'
+    });
 
     this.belongsToMany(db.monthly_payments, {
       through: db.monthly_payments_record,
