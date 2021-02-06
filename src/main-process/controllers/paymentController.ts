@@ -1,16 +1,19 @@
 export {};
-const DB = require('./../database');
 
-const paginate = require('../helper/paginate');
+const Sequelize = require('sequelize');
 
-const Payments = DB.payments;
-const Neighbors = DB.neighbors;
-const Houses = DB.houses;
-const Electronic_Payments = DB.electronic_payments;
+const models = require('../database/models/index');
+
+const paginate = require('../helpers/paginate');
+
+const Payment = models.Payment;
+const Neighbor = models.Neighbor;
+const House = models.House;
+const Electronic_Payment = models.Electronic_Payment;
 
 async function getPaymentsCount() {
   try {
-    const result = await Payments.count();
+    const result = await Payment.count();
     console.log(result);
     return { status: '1', message: 'Total de pagos', data: result };
   } catch (error) {
@@ -29,7 +32,7 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
   console.log(searchOptions);
 
   try {
-    const Op = DB.Sequelize.Op;
+    const Op = Sequelize.Op;
 
     const pageIndex = searchOptions.pageIndex;
     const pageSize = searchOptions.pageSize;
@@ -92,11 +95,11 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
       attributes: ['id', 'payment_method', 'payment_date', 'amount'],
       include: [
         {
-          model: Neighbors,
+          model: Neighbor,
           attributes: [['fullname', 'neighbor_fullname']]
         },
         {
-          model: Electronic_Payments,
+          model: Electronic_Payment,
           attributes: ['reference_number', 'bank']
         }
       ],
@@ -117,7 +120,7 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
       options['include'][1]['required'] = false;
     }
 
-    const result = await Payments.findAll(options);
+    const result = await Payment.findAll(options);
 
     return {
       status: '1',
@@ -160,12 +163,12 @@ async function create(_payment, _neighbor) {
 
     // Vecino no esta registrado
     if (_neighbor['neighborID'] === -1) {
-      await Houses.create({
+      await House.create({
         house_no: _neighbor.houseNumber,
         street: 'Calle finlandia'
       });
 
-      neighbor = await Neighbors.create({
+      neighbor = await Neighbor.create({
         dni: _neighbor.neighborDNI,
         fullname: _neighbor.fullName,
         phone_number: _neighbor.phoneNumber,
@@ -173,13 +176,13 @@ async function create(_payment, _neighbor) {
         house_no: _neighbor.houseNumber
       });
     } else {
-      neighbor = await Neighbors.findOne({
+      neighbor = await Neighbor.findOne({
         where: { id: _neighbor['neighborID'] }
       });
     }
 
     if (neighbor) {
-      const payment = await Payments.create({
+      const payment = await Payment.create({
         payment_date: _payment.paymentDate,
         payment_method: _payment.paymentMethod,
         amount: _payment.amount,
@@ -189,7 +192,7 @@ async function create(_payment, _neighbor) {
       if (payment) {
         /** Pago electronico */
         if (parseInt(_payment.paymentMethod) !== 0) {
-          const electronicPayment = await Electronic_Payments.create({
+          const electronicPayment = await Electronic_Payment.create({
             payment_id: payment.dataValues.id,
             bank: _payment['bank'] ? _payment['bank'] : '',
             reference_number: _payment['referenceNumber']
@@ -198,7 +201,7 @@ async function create(_payment, _neighbor) {
           });
 
           if (!electronicPayment) {
-            await Payments.destroy({ where: { id: payment.dataValues.id } });
+            await Payment.destroy({ where: { id: payment.dataValues.id } });
             return {
               status: '0',
               message: 'El registro del pago electronico ha fallado',
@@ -234,7 +237,7 @@ async function create(_payment, _neighbor) {
 
 /* async function read(){
     try {
-        const result = await Payments.findAll({include : Electronic_Payments});
+        const result = await Payment.findAll({include : Electronic_Payment});
         if(result){console.log(result)}
         return result
     } catch (error) {
@@ -246,7 +249,7 @@ async function create(_payment, _neighbor) {
 
 async function update(_payment){
     try {
-        result = await Payments.update(_payment,{ where: { id_pago: _payment.id_pago }})
+        result = await Payment.update(_payment,{ where: { id_pago: _payment.id_pago }})
         if(result){
             console.log("Registro actualizado con exito...")
             console.log(result)
@@ -261,7 +264,7 @@ async function update(_payment){
 
 async function delete_(id_pago){
     try {
-        const result = await Payments.destroy({
+        const result = await Payment.destroy({
             where: {
                 id_pago: id_pago
             }
@@ -278,7 +281,7 @@ async function delete_(id_pago){
 
 async function findById(id){
     try {
-        const payment = (await Payments.findOne({ where: { id_pago: id }, include : Electronic_Payments}));
+        const payment = (await Payment.findOne({ where: { id_pago: id }, include : Electronic_Payment}));
         if(payment!== null){
             console.log(payment)
             return payment;
@@ -296,7 +299,7 @@ async function findById(id){
 
 async function findByLider(id_lider){
     try {
-        const result = await Payments.findAll({ where: {lideresHogarCedula: id_lider}, include : Electronic_Payments});
+        const result = await Payment.findAll({ where: {lideresHogarCedula: id_lider}, include : Electronic_Payment});
         if(result){console.log(result)}
         return result
     } catch (error) {

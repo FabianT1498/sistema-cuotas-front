@@ -1,12 +1,14 @@
 export {};
-const DB = require('./../database');
+
+const models = require('../database/models/index');
+
 /* const hogaresController = require('./hogaresController'); */
 
-const Neighbors = DB.neighbors;
+const Neighbor = models.Neighbor;
 
 async function findByDNI(dni) {
   try {
-    const neighbor = await Neighbors.findOne({ where: { dni } });
+    const neighbor = await Neighbor.findOne({ where: { dni } });
     return {
       status: 1,
       message: neighbor ? 'Vecino encontrado' : 'Vecino no encontrado',

@@ -3,9 +3,10 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const url = require('url');
 const path = require('path');
 
-const paymentController = require('./main-process/controller/paymentController');
-const neighborController = require('./main-process/controller/neighborController');
-const DB = require('./main-process/database');
+const models = require('./main-process/database/models/index');
+
+const paymentController = require('./main-process/controllers/paymentController');
+const neighborController = require('./main-process/controllers/neighborController');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -64,11 +65,10 @@ app.on('activate', () => {
   }
 });
 
-DB.sequelize.sync();
-
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
+/* Payments handle events */
 ipcMain.handle('create-payment', async (event, ...args) => {
   const result = await paymentController.create(...args);
   return result;
