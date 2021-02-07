@@ -14,7 +14,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       id: {
         type: DataTypes.INTEGER,
-        primaryKey: true
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false
       },
       title: DataTypes.TEXT
     },

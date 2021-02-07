@@ -1,3 +1,5 @@
+import { nullSafeIsEquivalent } from '@angular/compiler/src/output/output_ast';
+
 export {};
 
 const Sequelize = require('sequelize');
@@ -33,6 +35,25 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
 
     const pageIndex = searchOptions.pageIndex;
     const pageSize = searchOptions.pageSize;
+
+    const neighborJoin = {
+      model: Neighbor,
+      attributes: [['fullname', 'neighbor_fullname']],
+      required: true
+    };
+
+    const electronicPaymentJoin = {
+      model: Electronic_Payment,
+      attributes: ['reference_number'],
+      required: false,
+      include: [
+        {
+          model: Bank,
+          attributes: ['name'],
+          required: false
+        }
+      ]
+    };
 
     const whereNeighbors = {};
     const wherePayments = {};
@@ -76,9 +97,9 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
     }
 
     // Electronic Payment search criterias
-    if (searchCriterias.paymentBank !== '-1') {
+    if (searchCriterias.paymentBank !== -1) {
       whereElectronicPayment['bank_id'] = {
-        [Op.eq]: [searchCriterias.paymentBank]
+        [Op.eq]: [parseInt(searchCriterias.paymentBank, 10)]
       };
     }
 
@@ -90,38 +111,30 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
 
     const options = {
       attributes: ['id', 'payment_method', 'payment_date', 'amount'],
-      include: [
-        {
-          model: Neighbor,
-          attributes: [['fullname', 'neighbor_fullname']]
-        },
-        {
-          model: Electronic_Payment,
-          attributes: ['reference_number'],
-          include: [
-            {
-              model: Bank,
-              attributes: ['name'],
-              required: false
-            }
-          ]
-        }
-      ],
+      include: [neighborJoin],
       ...paginate.paginate({ pageIndex, pageSize })
     };
 
-    if (Object.keys(wherePayments).length > 0) {
-      options['where'] = wherePayments;
+    if (searchCriterias.paymentMethod === 'Todos') {
+      options['include'].push(electronicPaymentJoin);
+    } else if (
+      searchCriterias.paymentMethod === 'Pago movil' ||
+      searchCriterias.paymentMethod === 'Transferencia'
+    ) {
+      electronicPaymentJoin.required = true;
+      options['include'].push(electronicPaymentJoin);
     }
 
     if (Object.keys(whereNeighbors).length > 0) {
       options['include'][0]['where'] = whereNeighbors;
-      options['include'][0]['required'] = true;
     }
 
     if (Object.keys(whereElectronicPayment).length > 0) {
       options['include'][1]['where'] = whereElectronicPayment;
-      options['include'][1]['required'] = false;
+    }
+
+    if (Object.keys(wherePayments).length > 0) {
+      options['where'] = wherePayments;
     }
 
     const result = await Payment.findAll(options);
@@ -141,7 +154,9 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
           referenceNumber: el.Electronic_Payment
             ? el.Electronic_Payment.dataValues.reference_number
             : '',
-          bank: el.Bank ? el.Bank.dataValues.name : '',
+          bank: el.Electronic_Payment
+            ? el.Electronic_Payment.Bank.dataValues.name
+            : '',
           neighborFullName: el.Neighbor
             ? el.Neighbor.dataValues.neighbor_fullname
             : ''
@@ -185,20 +200,22 @@ async function create(_payment, _neighbor) {
       });
     }
 
+    console.log(neighbor);
+
     if (neighbor) {
       const payment = await Payment.create({
         payment_date: _payment.paymentDate,
         payment_method: _payment.paymentMethod,
         amount: _payment.amount,
-        neighbor_id: neighbor.dataValues.id
+        neighbor_id: neighbor.getDataValue('id')
       });
 
       if (payment) {
         /** Pago electronico */
-        if (parseInt(_payment.paymentMethod) !== 0) {
+        if (_payment.paymentMethod !== 'Efectivo') {
           const electronicPayment = await Electronic_Payment.create({
             payment_id: payment.dataValues.id,
-            bank: _payment['bank'] ? _payment['bank'] : '',
+            bank_id: _payment['bank'] ? _payment['bank'] : null,
             reference_number: _payment['referenceNumber']
               ? _payment['referenceNumber']
               : ''
@@ -231,6 +248,7 @@ async function create(_payment, _neighbor) {
       return { status: '0', message: 'Este vecino no existe', data: {} };
     }
   } catch (error) {
+    console.error(error);
     return {
       status: '0',
       message: 'ha ocurrido un error durante el registro en la base de datos',
@@ -315,3 +333,14 @@ async function findByLider(id_lider){
 
 /* module.exports = {create, read, update, delete_,findById,findByLider} */
 module.exports = { getPayments, create, getPaymentsCount };
+
+/* Executing (default): SELECT `Payment`.`id`, `Payment`.`payment_method`, `Payment`.`payment_date`, `Payment`.`amount`,
+`Neighbor`.`id` AS `Neighbor.id`, `Neighbor`.`fullname` AS `Neighbor.neighbor_fullname`,
+ `Electronic_Payment`.`payment_id` AS `Electronic_Payment.payment_id`, `Electronic_Payment`.`reference_number` 
+ AS `Electronic_Payment.reference_number`, `Electronic_Payment->Bank`.`id` AS `Electronic_Payment.Bank.id`, `Electronic_Payment->Bank`.`name` 
+ AS `Electronic_Payment.Bank.name` FROM `Payments` AS `Payment` INNER JOIN `Neighbors` AS `Neighbor` 
+ ON `Payment`.`neighbor_id` = `Neighbor`.`id` LEFT OUTER JOIN ( `Electronic_Payments` AS `Electronic_Payment` 
+ INNER JOIN `Banks` AS `Electronic_Payment->Bank` 
+ ON `Electronic_Payment`.`bank_id` = `Electronic_Payment->Bank`.`id` ) ON `Payment`.`id` = `Electronic_Payment`.`payment_id` 
+ AND `Electronic_Payment`.`bank_id` = '3' WHERE `Payment`.`payment_method` = 'Pago movil' LIMIT 0, 5;
+ */

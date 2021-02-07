@@ -38,7 +38,10 @@ export class NeighborService {
       filter((query: string) => query && query.length > 7),
       switchMap(term => {
         return from(this.ipc.invoke('find-neighbor-by-dni', term)).pipe(
-          map(res => res)
+          map(res => {
+            console.log(res);
+            return res;
+          })
         );
       })
     );

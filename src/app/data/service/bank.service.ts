@@ -17,7 +17,7 @@ export class BankService {
         if (res.status === 0) {
           throw new Error(res.message);
         }
-        return res;
+        return res.data;
       })
     );
   }

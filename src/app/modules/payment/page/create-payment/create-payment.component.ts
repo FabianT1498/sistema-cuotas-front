@@ -313,7 +313,7 @@ export class CreatePaymentComponent
   private createPaymentGroup(): FormGroup {
     return this.formBuilder.group({
       paymentDate: ['', Validators.required],
-      paymentMethod: ['0', Validators.required],
+      paymentMethod: ['Efectivo', Validators.required],
       amount: [
         0,
         [
@@ -510,7 +510,7 @@ export class CreatePaymentComponent
   /*  --------------------------------------------- */
 
   get isElectronicPayment(): boolean {
-    return this.paymentGroup.get('paymentMethod').value !== '0';
+    return this.paymentGroup.get('paymentMethod').value !== 'Efectivo';
   }
 
   paymentMethodChange($event) {

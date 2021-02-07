@@ -6,7 +6,6 @@ const Bank = models.Bank;
 async function getBanks() {
   try {
     const result = await Bank.findAll();
-
     return {
       status: '1',
       message: 'Bancos encontrados',

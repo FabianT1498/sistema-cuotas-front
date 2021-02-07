@@ -15,7 +15,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       payment_id: {
         type: DataTypes.INTEGER,
-        primaryKey: true
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false
       },
       reference_number: DataTypes.STRING,
       bank_id: DataTypes.INTEGER

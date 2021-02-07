@@ -178,7 +178,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
       .valueChanges.pipe(distinctUntilChanged(), takeUntil(this.signal$));
 
     paymentMethod$.subscribe((res: string) => {
-      parseInt(res, 10) > 0
+      res !== 'Todos' && res !== 'Efectivo'
         ? this.isElectronicPayment$.next(true)
         : this.isElectronicPayment$.next(false);
       this.resetElectronicPaymentsInputs();
@@ -225,7 +225,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private resetElectronicPaymentsInputs() {
-    this.searchPaymentsForm.get('paymentBank').setValue('-1');
+    this.searchPaymentsForm.get('paymentBank').setValue(-1);
     this.searchPaymentsForm.get('referenceNumber').setValue('');
   }
 

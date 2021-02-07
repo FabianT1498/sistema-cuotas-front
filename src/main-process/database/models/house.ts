@@ -14,7 +14,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       house_no: {
         type: DataTypes.STRING(10),
-        primaryKey: true
+        primaryKey: true,
+        autoIncrement: true,
+        allowNull: false
       },
       street: DataTypes.STRING(50)
     },
