@@ -23,9 +23,11 @@ import { PaymentsDataSource } from '@shared/data-source/payments-data-source';
 import { ActivatedRoute } from '@angular/router';
 
 import { PaymentService } from '@data/service/payment.service';
+import { BankService } from '@data/service/bank.service';
 
 import { FormGroup, FormBuilder } from '@angular/forms';
 import { Moment } from 'moment';
+import { Bank } from '@data/schema/bank';
 
 @Component({
   selector: 'app-payment',
@@ -58,7 +60,8 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Observablesdata */
   paymentMethods$: Observable<any[]>;
-  banks$: Observable<any[]>;
+  banks$: Observable<Bank[]>;
+
   isElectronicPayment$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(
     false
   );
@@ -67,6 +70,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private paymentService: PaymentService,
+    private bankService: BankService,
     private selectOptionsService: SelectOptionsService,
     private route: ActivatedRoute,
     private formBuilder: FormBuilder
@@ -95,7 +99,8 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.paymentMethods$ = this.selectOptionsService.getOptions(
       'paymentMethods'
     );
-    this.banks$ = this.selectOptionsService.getOptions('banks');
+
+    this.banks$ = this.bankService.getBanks();
 
     this.paymentSearch = {
       neighborID: -1,
@@ -107,6 +112,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
         pageSize: 5
       }
     };
+
     this.searchData$ = new BehaviorSubject(this.paymentSearch);
 
     /** Data Source */
@@ -122,7 +128,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
       neighborDNI: '',
       paymentStartDate: '',
       paymentEndDate: '',
-      paymentMethod: '-1',
+      paymentMethod: 'Todos',
       paymentBank: '-1',
       referenceNumber: ''
     });
@@ -205,7 +211,6 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
     )
       .pipe(takeUntil(this.signal$))
       .subscribe(res => {
-        console.log(res);
         this.paginator.pageIndex = 0;
         this.loadPaymentsPage();
       });
@@ -232,8 +237,6 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
       pageSize: this.paginator.pageSize
     };
 
-    console.log(this.paymentSearch);
-
     this.searchData$.next(this.paymentSearch);
   }
 
@@ -244,12 +247,8 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.signal$.next();
     this.signal$.complete();
+
+    this.searchData$.complete();
+    this.isElectronicPayment$.complete();
   }
 }
-
-/**
- * 1. Registro el observable Valuechanges para cada uno de los form control
- * 2. Mezclo todos los resultados con combine latest.
- * 3. Envío los valores a la función loadPaymentsPage
- *
- */

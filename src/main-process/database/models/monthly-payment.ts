@@ -5,7 +5,8 @@ module.exports = (sequelize, DataTypes) => {
   class Monthly_Payment extends Model {
     static associate(models) {
       this.belongsToMany(models.Payment, {
-        through: 'Monthly_Payments_Record'
+        through: 'Monthly_Payments_Record',
+        foreignKey: 'monthly_payment_id'
       });
     }
   }
@@ -22,7 +23,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize: sequelize,
-      modelName: 'Monthly_Payment'
+      modelName: 'Monthly_Payment',
+      timestamps: false
     }
   );
 

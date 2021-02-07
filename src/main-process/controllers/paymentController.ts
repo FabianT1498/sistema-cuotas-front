@@ -10,6 +10,7 @@ const Payment = models.Payment;
 const Neighbor = models.Neighbor;
 const House = models.House;
 const Electronic_Payment = models.Electronic_Payment;
+const Bank = models.Bank;
 
 async function getPaymentsCount() {
   try {
@@ -27,10 +28,6 @@ async function getPaymentsCount() {
 }
 
 async function getPayments(neighborID, searchCriterias, searchOptions) {
-  console.log(neighborID);
-  console.log(searchCriterias);
-  console.log(searchOptions);
-
   try {
     const Op = Sequelize.Op;
 
@@ -72,7 +69,7 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
       };
     }
 
-    if (searchCriterias.paymentMethod !== '-1') {
+    if (searchCriterias.paymentMethod !== 'Todos') {
       wherePayments['payment_method'] = {
         [Op.eq]: [searchCriterias.paymentMethod]
       };
@@ -80,7 +77,7 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
 
     // Electronic Payment search criterias
     if (searchCriterias.paymentBank !== '-1') {
-      whereElectronicPayment['bank'] = {
+      whereElectronicPayment['bank_id'] = {
         [Op.eq]: [searchCriterias.paymentBank]
       };
     }
@@ -100,7 +97,14 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
         },
         {
           model: Electronic_Payment,
-          attributes: ['reference_number', 'bank']
+          attributes: ['reference_number'],
+          include: [
+            {
+              model: Bank,
+              attributes: ['name'],
+              required: false
+            }
+          ]
         }
       ],
       ...paginate.paginate({ pageIndex, pageSize })
@@ -122,6 +126,8 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
 
     const result = await Payment.findAll(options);
 
+    console.log(result);
+
     return {
       status: '1',
       message: 'Pagos encontrados',
@@ -131,15 +137,13 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
           neighborID: neighborID,
           paymentDate: el.payment_date,
           amount: el.amount,
-          paymentMethod: parseInt(el.payment_method),
-          referenceNumber: el.electronic_payment
-            ? el.electronic_payment.dataValues.reference_number
+          paymentMethod: el.payment_method,
+          referenceNumber: el.Electronic_Payment
+            ? el.Electronic_Payment.dataValues.reference_number
             : '',
-          bank: el.electronic_payment
-            ? el.electronic_payment.dataValues.bank
-            : '',
-          neighborFullName: el.neighbor
-            ? el.neighbor.dataValues.neighbor_fullname
+          bank: el.Bank ? el.Bank.dataValues.name : '',
+          neighborFullName: el.Neighbor
+            ? el.Neighbor.dataValues.neighbor_fullname
             : ''
         };
       })

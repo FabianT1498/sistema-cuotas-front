@@ -5,6 +5,7 @@ const path = require('path');
 
 const models = require('./main-process/database/models/index');
 
+const bankController = require('./main-process/controllers/bankController');
 const paymentController = require('./main-process/controllers/paymentController');
 const neighborController = require('./main-process/controllers/neighborController');
 
@@ -67,6 +68,12 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+/** Banks handle events */
+ipcMain.handle('get-banks', async (event, ...args) => {
+  const result = await bankController.getBanks();
+  return result;
+});
 
 /* Payments handle events */
 ipcMain.handle('create-payment', async (event, ...args) => {

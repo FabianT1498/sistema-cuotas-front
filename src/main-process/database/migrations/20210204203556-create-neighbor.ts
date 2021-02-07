@@ -28,6 +28,14 @@ module.exports = {
           type: Sequelize.STRING,
           allowNull: false,
           unique: true
+        },
+        created_at: {
+          type: Sequelize.TEXT,
+          allowNull: false
+        },
+        updated_at: {
+          type: Sequelize.TEXT,
+          allowNull: false
         }
       })
       .then(() =>

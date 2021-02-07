@@ -11,6 +11,14 @@ module.exports = {
       street: {
         type: Sequelize.STRING(50),
         allowNull: false
+      },
+      created_at: {
+        type: Sequelize.TEXT,
+        allowNull: false
+      },
+      updated_at: {
+        type: Sequelize.TEXT,
+        allowNull: false
       }
     });
   },

@@ -111,7 +111,7 @@
 								<select matNativeControl (change)="paymentMethodChange($event)" formControlName="paymentMethod" required>
 									<option 
 										*ngFor="let paymentMethod of paymentMethods$ | async" 
-										[value]="paymentMethod.id" 
+										[value]="paymentMethod.name" 
 									>
 										{{paymentMethod.name}}
 									</option>

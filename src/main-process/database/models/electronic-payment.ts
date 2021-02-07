@@ -5,7 +5,9 @@ module.exports = (sequelize, DataTypes) => {
   class Electronic_Payment extends Model {
     static associate(models) {
       this.belongsTo(models.Payment);
-      this.belongsTo(models.Bank);
+      this.belongsTo(models.Bank, {
+        foreignKey: 'bank_id'
+      });
     }
   }
 
@@ -20,7 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize: sequelize,
-      modelName: 'Electronic_Payment'
+      modelName: 'Electronic_Payment',
+      timestamps: false
     }
   );
 

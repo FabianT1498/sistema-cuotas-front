@@ -4,20 +4,27 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Payment extends Model {
     static associate(models) {
-      this.belongsTo(models.Neighbor);
+      this.belongsTo(models.Neighbor, {
+        foreignKey: 'neighbor_id'
+      });
 
-      this.hasOne(models.Electronic_Payment);
+      this.hasOne(models.Electronic_Payment, {
+        foreignKey: 'payment_id'
+      });
 
       this.belongsToMany(models.Monthly_Payment, {
-        through: 'Monthly_Payments_Record'
+        through: 'Monthly_Payments_Record',
+        foreignKey: 'payment_id'
       });
 
       this.belongsToMany(models.Contribution, {
-        through: 'Contributions_Payments'
+        through: 'Contributions_Payments',
+        foreignKey: 'payment_id'
       });
 
       this.belongsToMany(models.Repair, {
-        through: 'Repairs_Payments'
+        through: 'Repairs_Payments',
+        foreignKey: 'payment_id'
       });
     }
   }
@@ -34,7 +41,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize: sequelize,
-      modelName: 'Payment'
+      modelName: 'Payment',
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
     }
   );
 

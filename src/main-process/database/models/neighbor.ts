@@ -4,7 +4,9 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Neighbor extends Model {
     static associate(models) {
-      this.belongsTo(models.House);
+      this.belongsTo(models.House, {
+        foreignKey: 'house_no'
+      });
       this.hasMany(models.Payment);
     }
   }
@@ -22,7 +24,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize: sequelize,
-      modelName: 'Neighbor'
+      modelName: 'Neighbor',
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
     }
   );
 

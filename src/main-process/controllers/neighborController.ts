@@ -9,12 +9,15 @@ const Neighbor = models.Neighbor;
 async function findByDNI(dni) {
   try {
     const neighbor = await Neighbor.findOne({ where: { dni } });
+
     return {
       status: 1,
       message: neighbor ? 'Vecino encontrado' : 'Vecino no encontrado',
       data: neighbor ? neighbor.dataValues : null
     };
   } catch (error) {
+    console.error(error);
+
     return {
       status: 0,
       message: 'Ha ocurrido un error durante la operacion',

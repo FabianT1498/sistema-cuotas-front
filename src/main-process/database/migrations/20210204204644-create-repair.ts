@@ -24,6 +24,14 @@ module.exports = {
       cost: {
         type: Sequelize.REAL,
         allowNull: false
+      },
+      created_at: {
+        type: Sequelize.TEXT,
+        allowNull: false
+      },
+      updated_at: {
+        type: Sequelize.TEXT,
+        allowNull: false
       }
     });
   },

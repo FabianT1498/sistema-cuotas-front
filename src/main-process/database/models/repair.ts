@@ -5,7 +5,8 @@ module.exports = (sequelize, DataTypes) => {
   class Repair extends Model {
     static associate(models) {
       this.belongsToMany(models.Payment, {
-        through: 'Repairs_Payments'
+        through: 'Repairs_Payments',
+        foreignKey: 'repair_id'
       });
     }
   }
@@ -23,7 +24,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize: sequelize,
-      modelName: 'Repair'
+      modelName: 'Repair',
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
     }
   );
 

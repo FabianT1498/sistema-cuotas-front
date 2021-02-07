@@ -32,6 +32,7 @@ import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
 import { RepairService } from '@data/service/repair.service';
 import { ContributionService } from '@data/service/contribution.service';
 import { PaymentService } from '@data/service/payment.service';
+import { BankService } from '@data/service/bank.service';
 
 /** SCHEMAS */
 import { MonthlyPayment } from '@data/schema/monthly-payment';
@@ -39,6 +40,7 @@ import { Neighbor, NeighborModel } from '@data/schema/neighbor';
 import { Repair } from '@data/schema/repair';
 import { Payment, PaymentModel } from '@data/schema/payment';
 import { Contribution } from '@data/schema/contribution';
+import { Bank } from '@data/schema/bank';
 
 @Component({
   selector: 'app-create-payment',
@@ -74,7 +76,7 @@ export class CreatePaymentComponent
 
   /** Observable data */
   paymentMethods$: Observable<Array<any>>;
-  banks$: Observable<Array<any>>;
+  banks$: Observable<Bank[]>;
 
   /** Monthly payments table */
   monthlyPaymentsTblColumns: string[];
@@ -118,6 +120,7 @@ export class CreatePaymentComponent
     private monthlyPaymentService: MonthlyPaymentService,
     private repairService: RepairService,
     private contributionService: ContributionService,
+    private bankService: BankService,
     private paymentService: PaymentService
   ) {
     this.isLoading = false;
@@ -207,7 +210,7 @@ export class CreatePaymentComponent
     this.paymentMethods$ = this.selectOptionsService.getOptions(
       'paymentMethods'
     );
-    this.banks$ = this.selectOptionsService.getOptions('banks');
+    this.banks$ = this.bankService.getBanks();
   }
 
   clearFormData() {
