@@ -2,16 +2,19 @@ export {};
 const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  class Repair extends Model {
+  class Monthly_Payment_Record extends Model {
     static associate(models) {
-      this.belongsToMany(models.Payment, {
-        through: 'Repairs_Payments',
-        foreignKey: 'repair_id'
+      this.belongsTo(models.Payment, {
+        foreignKey: 'payment_id'
+      });
+
+      this.belongsTo(models.Monthly_Payment_Year_Month, {
+        foreignKey: 'monthly_payment_date'
       });
     }
   }
 
-  Repair.init(
+  Monthly_Payment_Record.init(
     {
       id: {
         type: DataTypes.INTEGER,
@@ -19,20 +22,17 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         allowNull: false
       },
-      title: DataTypes.STRING(100),
-      description: DataTypes.TEXT,
-      issue_date: DataTypes.TEXT,
-      cost: DataTypes.REAL
+      amount: DataTypes.FLOAT(15)
     },
     {
       sequelize: sequelize,
-      modelName: 'Repair',
-      tableName: 'Repairs',
+      modelName: 'Monthly_Payment_Record',
+      tableName: 'Monthly_Payments_Record',
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at'
     }
   );
 
-  return Repair;
+  return Monthly_Payment_Record;
 };

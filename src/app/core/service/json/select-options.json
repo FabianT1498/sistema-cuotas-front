@@ -1,7 +1,0 @@
-{
-  "paymentMethods": [
-    { "id": 0, "name": "Efectivo" },
-    { "id": 1, "name": "Pago movil" },
-    { "id": 2, "name": "Transferencia" }
-  ]
-}

@@ -8,6 +8,7 @@ const models = require('./main-process/database/models/index');
 const bankController = require('./main-process/controllers/bankController');
 const paymentController = require('./main-process/controllers/paymentController');
 const neighborController = require('./main-process/controllers/neighborController');
+const monthlyPaymentController = require('./main-process/controllers/monthlyPaymentController');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -88,6 +89,19 @@ ipcMain.handle('get-payments-count', async (event, ...args) => {
 
 ipcMain.handle('get-payments', async (event, ...args) => {
   const result = await paymentController.getPayments(...args);
+  return result;
+});
+
+/** Monthly Payments events */
+ipcMain.handle('get-unpaid-monthly-payments', async (event, ...args) => {
+  const result = await monthlyPaymentController.getUnpaidMonthlyPayments(
+    ...args
+  );
+  return result;
+});
+
+ipcMain.handle('get-monthly-payment-cost', async (event, ...args) => {
+  const result = await monthlyPaymentController.getMonthlyPaymentCost();
   return result;
 });
 

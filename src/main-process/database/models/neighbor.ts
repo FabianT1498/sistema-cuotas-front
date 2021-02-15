@@ -27,6 +27,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize: sequelize,
       modelName: 'Neighbor',
+      tableName: 'Neighbors',
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at'

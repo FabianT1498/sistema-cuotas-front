@@ -1,6 +1,5 @@
 export interface MonthlyPayment {
-  id?: number;
-  month: string;
+  id?: string;
+  month: number;
   year: number;
-  cost: number;
 }

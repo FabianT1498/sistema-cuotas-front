@@ -3,7 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     return queryInterface.bulkInsert('Contributions', [
-      { title: 'Apoyo a los visitantes' },
+      { title: 'Apoyo a los vigilantes' },
       { title: 'Aguinaldo' },
       { title: 'Incentivo para comprar el agua' },
       { title: 'Incentivo para pagar el transporte de los vigilantes' },

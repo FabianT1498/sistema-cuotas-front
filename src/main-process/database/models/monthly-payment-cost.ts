@@ -2,33 +2,29 @@ export {};
 const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  class House extends Model {
-    static associate(models) {
-      this.hasOne(models.Neighbor, {
-        foreignKey: 'house_no'
-      });
-    }
+  class Monthly_Payment_Cost extends Model {
+    static associate(models) {}
   }
 
-  House.init(
+  Monthly_Payment_Cost.init(
     {
-      house_no: {
-        type: DataTypes.STRING(10),
+      id: {
+        type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false
       },
-      street: DataTypes.STRING(50)
+      cost: DataTypes.FLOAT(15)
     },
     {
       sequelize: sequelize,
-      modelName: 'House',
-      tableName: 'Houses',
+      modelName: 'Monthly_Payment_Cost',
+      tableName: 'Monthly_Payments_Costs',
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at'
     }
   );
 
-  return House;
+  return Monthly_Payment_Cost;
 };

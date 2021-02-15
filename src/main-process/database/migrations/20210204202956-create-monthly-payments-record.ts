@@ -13,17 +13,25 @@ module.exports = {
         amount: {
           type: Sequelize.FLOAT(15),
           allowNull: false
+        },
+        created_at: {
+          type: Sequelize.TEXT,
+          allowNull: false
+        },
+        updated_at: {
+          type: Sequelize.TEXT,
+          allowNull: false
         }
       })
       .then(() =>
         queryInterface.addColumn(
           'Monthly_Payments_Record',
-          'monthly_payment_id',
+          'monthly_payment_date',
           {
-            type: Sequelize.INTEGER,
+            type: Sequelize.TEXT,
             references: {
-              model: 'Monthly_Payments', // name of Target model
-              key: 'id' // key in Target model that we're referencing
+              model: 'Monthly_Payments_Years_Months', // name of Target model
+              key: 'monthly_payment_date' // key in Target model that we're referencing
             },
             onUpdate: 'CASCADE',
             onDelete: 'SET NULL',

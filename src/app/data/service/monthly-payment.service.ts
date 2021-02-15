@@ -1,18 +1,16 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import {
   catchError,
-  debounceTime,
-  distinctUntilChanged,
   switchMap,
-  map
+  map,
+  distinctUntilChanged
 } from 'rxjs/operators';
-
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 import { MonthlyPayment } from '../schema/monthly-payment';
 
 import { handleError } from './handleError';
+import { IpcService } from '@app/service/ipc.service';
 
 @Injectable({
   providedIn: 'root'
@@ -20,41 +18,40 @@ import { handleError } from './handleError';
 export class MonthlyPaymentService {
   private monthlyPaymentUrl = 'api/monthlyPayments'; // URL to web api
 
-  constructor(private http: HttpClient) {}
-
-  getAll(): Observable<MonthlyPayment[]> {
-    return this.http
-      .get<MonthlyPayment[]>(this.monthlyPaymentUrl)
-      .pipe(catchError(handleError<MonthlyPayment[]>('getAll', [])));
-  }
+  constructor(private ipc: IpcService) {}
 
   getUnpaidMonthlyPayments(
     neighborID: Observable<number>
   ): Observable<MonthlyPayment[]> {
-    /* return this.http
-      .get<MonthlyPayment[]>(
-        `${this.monthlyPaymentUrl}/?neighborID=${neighborID}`
-      )
-      .pipe(
-        catchError(
-          handleError<MonthlyPayment[]>('getUnpaidMonthlyPayments', [])
-        )
-      ); */
     return neighborID.pipe(
-      debounceTime(400),
       distinctUntilChanged(),
-      switchMap(id =>
-        this.http.get<MonthlyPayment[]>(this.monthlyPaymentUrl).pipe(
-          map((monthlyPayment, index) => {
-            console.log(`${index}: ${monthlyPayment}`);
-            return monthlyPayment;
+      switchMap(id => {
+        return from(this.ipc.invoke('get-unpaid-monthly-payments', id)).pipe(
+          map(res => {
+            if (res.status === 0) {
+              throw new Error(res.message);
+            }
+            console.log(res.data);
+            return res.data;
           })
-        )
-      )
+        );
+      })
     );
   }
 
-  getPaidMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {
+  getMonthlyPaymentCost(): Observable<number> {
+    return from(this.ipc.invoke('get-monthly-payment-cost')).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+        console.log(res.data);
+        return res.data;
+      })
+    );
+  }
+
+  /* getPaidMonthlyPayments(neighborID: string): Observable<MonthlyPayment[]> {
     return this.http
       .get<MonthlyPayment[]>(
         `${this.monthlyPaymentUrl}/?neighborID=${neighborID}`
@@ -62,5 +59,5 @@ export class MonthlyPaymentService {
       .pipe(
         catchError(handleError<MonthlyPayment[]>('getPaidMonthlyPayments', []))
       );
-  }
+  } */
 }

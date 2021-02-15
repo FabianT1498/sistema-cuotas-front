@@ -12,8 +12,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'payment_id'
       });
 
-      this.belongsToMany(models.Monthly_Payment, {
-        through: 'Monthly_Payments_Record',
+      this.hasMany(models.Monthly_Payment_Record, {
         foreignKey: 'payment_id'
       });
 
@@ -44,6 +43,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize: sequelize,
       modelName: 'Payment',
+      tableName: 'Payments',
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at'

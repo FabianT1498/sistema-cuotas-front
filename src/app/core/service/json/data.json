@@ -1,0 +1,22 @@
+{
+  "paymentMethods": [
+    { "id": 0, "name": "Efectivo" },
+    { "id": 1, "name": "Pago movil" },
+    { "id": 2, "name": "Transferencia" }
+  ],
+  "months": [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre"
+  ],
+  "monthlyPaymentCost": 1500000
+}

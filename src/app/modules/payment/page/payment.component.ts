@@ -18,7 +18,7 @@ import { PaymentSearch } from '@data/interface/search-payments';
 
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { SelectOptionsService } from '@app/service/select-options.service';
+import { DataService } from '@app/service/data.service';
 import { PaymentsDataSource } from '@shared/data-source/payments-data-source';
 import { ActivatedRoute } from '@angular/router';
 
@@ -71,7 +71,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private paymentService: PaymentService,
     private bankService: BankService,
-    private selectOptionsService: SelectOptionsService,
+    private dataService: DataService,
     private route: ActivatedRoute,
     private formBuilder: FormBuilder
   ) {}
@@ -96,9 +96,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadInitialData() {
-    this.paymentMethods$ = this.selectOptionsService.getOptions(
-      'paymentMethods'
-    );
+    this.paymentMethods$ = this.dataService.getData('paymentMethods');
 
     this.banks$ = this.bankService.getBanks();
 

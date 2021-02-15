@@ -2,7 +2,6 @@ import {
   Component,
   OnDestroy,
   OnInit,
-  AfterViewInit,
   TemplateRef,
   ViewChild,
   ViewContainerRef,
@@ -17,22 +16,28 @@ import {
   FormArray
 } from '@angular/forms';
 
-import { SelectionModel } from '@angular/cdk/collections';
-import { MatTableDataSource } from '@angular/material/table';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
-
-import { catchError, finalize, takeUntil, tap } from 'rxjs/operators';
+import {
+  catchError,
+  debounceTime,
+  finalize,
+  map,
+  startWith,
+  takeUntil,
+  tap
+} from 'rxjs/operators';
 import { Observable, Subject, throwError } from 'rxjs';
 
 /** SERVICES */
-import { SelectOptionsService } from '@app/service/select-options.service';
+import { DataService } from '@app/service/data.service';
 import { NeighborService } from '@data/service/neightbor.service';
 import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
 import { RepairService } from '@data/service/repair.service';
 import { ContributionService } from '@data/service/contribution.service';
 import { PaymentService } from '@data/service/payment.service';
 import { BankService } from '@data/service/bank.service';
+
+/* SHARED SERVICES */
+import { ClearSelectTableService } from '@shared/service/clear-select-table.service';
 
 /** SCHEMAS */
 import { MonthlyPayment } from '@data/schema/monthly-payment';
@@ -48,24 +53,18 @@ import { Bank } from '@data/schema/bank';
   styleUrls: ['./create-payment.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class CreatePaymentComponent
-  implements OnInit, OnDestroy, AfterViewInit {
+export class CreatePaymentComponent implements OnInit, OnDestroy {
   /** Signal to unsubscribe from all observables */
   private signal$: Subject<any>;
 
   isLoading: boolean;
-
-  /* New payment subject */
-  newRecord$: Subject<any>;
 
   /** Neighbor form section */
   @ViewChild('neighborNotFound') neighborNotFoundComp: TemplateRef<any>;
   @ViewChild('neighborFound') neighborFoundComp: TemplateRef<any>;
   @ViewChild('newNeighbor') newNeighborComp: TemplateRef<any>;
   @ViewChild('neighborContainer', { read: ViewContainerRef }) neighborContainer;
-
   neighborFullName: string;
-  neighborDNI$: Subject<string>;
   neighborID$: Subject<number>;
 
   /** FORM GROUPS */
@@ -77,120 +76,64 @@ export class CreatePaymentComponent
   /** Observable data */
   paymentMethods$: Observable<Array<any>>;
   banks$: Observable<Bank[]>;
+  monthlyPayments$: Observable<MonthlyPayment[]>;
+  repairs$: Observable<Repair[]>;
+  contributions$: Observable<Contribution[]>;
 
-  /** Monthly payments table */
-  monthlyPaymentsTblColumns: string[];
-  totalMonthlyPaymentsTblColumns: string[];
-  monthlyPaymentsSource: MatTableDataSource<MonthlyPayment>;
-  monthlyPaymentsSelection: SelectionModel<MonthlyPayment>;
-  @ViewChild(MatPaginator) monthlyPaymentsTblpaginator: MatPaginator;
-  @ViewChild(MatSort) monthlyPaymentsTblSort: MatSort;
+  /** Monthly Payments component Outputs */
+  monthlyPaymentsTotalCost: number;
+  monthlyPaymentsSelected: MonthlyPayment[];
 
-  /** Repairs table */
-  repairsTblColumns: string[];
-  totalRepairsTblColumns: string[];
-  repairsSource: MatTableDataSource<Repair>;
-  repairsSelection: SelectionModel<Repair>;
-  @ViewChild(MatPaginator) repairsTblpaginator: MatPaginator;
-  @ViewChild(MatSort) repairsTblSort: MatSort;
+  /** Repairs component Outputs */
+  repairsTotalCost: number;
+  repairsSelected: Repair[];
 
-  /** Contributions table */
-  neighborContributions: any;
-  contributionsTblColumns: string[];
-  totalContributionsTblColumns: string[];
-  contributionsSource: MatTableDataSource<Contribution>;
-  @ViewChild(MatPaginator) contributionsTblpaginator: MatPaginator;
+  /** Contributions component Outputs */
+  contributionsTotalAmount: number;
+  contributionsSelected: Contribution[];
 
-  /** Summary table */
-  summarySource: MatTableDataSource<Contribution>;
-  summaryElements: any[];
-  summaryTblColumns: string[];
-  totalSummaryTblColumns: string[];
-  availableSummaryTblColumns: string[];
-  remaningSummaryTblColumns: string[];
+  /** Summary component Input */
+  summaryItems: any[];
 
   /** Remaining Amount */
-  amountRemaining: number;
+  remainingAmount: number;
+
+  /* New payment subject */
+  newRecord$: Subject<any>;
 
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
-    private selectOptionsService: SelectOptionsService,
+    private dataService: DataService,
     private neighborService: NeighborService,
     private monthlyPaymentService: MonthlyPaymentService,
     private repairService: RepairService,
     private contributionService: ContributionService,
     private bankService: BankService,
-    private paymentService: PaymentService
-  ) {
-    this.isLoading = false;
-
-    this.monthlyPaymentsSelection = new SelectionModel<MonthlyPayment>(
-      true,
-      []
-    );
-    this.monthlyPaymentsSource = new MatTableDataSource<MonthlyPayment>();
-    this.monthlyPaymentsTblColumns = [
-      'select',
-      'position',
-      'month',
-      'year',
-      'cost'
-    ];
-    this.totalMonthlyPaymentsTblColumns = [
-      'emptyFooter',
-      'totalTitle',
-      'emptyFooter',
-      'emptyFooter',
-      'totalCost'
-    ];
-
-    this.repairsSelection = new SelectionModel<Repair>(true, []);
-    this.repairsSource = new MatTableDataSource<Repair>();
-    this.repairsTblColumns = ['select', 'position', 'repair', 'date', 'cost'];
-    this.totalRepairsTblColumns = [
-      'emptyFooter',
-      'totalTitle',
-      'emptyFooter',
-      'emptyFooter',
-      'totalCost'
-    ];
-
-    this.neighborContributions = {};
-    this.contributionsSource = new MatTableDataSource<Contribution>();
-    this.contributionsTblColumns = [
-      'position',
-      'contributionTitle',
-      'contributionAmount'
-    ];
-    this.totalContributionsTblColumns = [
-      'emptyFooter',
-      'totalTitle',
-      'totalContribution'
-    ];
-
-    this.summarySource = new MatTableDataSource<any>();
-    this.summaryElements = [];
-    this.summaryTblColumns = ['title', 'amountTitle'];
-    this.totalSummaryTblColumns = ['totalTitle', 'totalSummary'];
-    this.availableSummaryTblColumns = ['availableTitle', 'available'];
-    this.remaningSummaryTblColumns = ['remainingTitle', 'remainingSummary'];
-  }
+    private paymentService: PaymentService,
+    private clearSelectTableService: ClearSelectTableService
+  ) {}
 
   ngOnInit() {
+    this.init();
     this.buildForm();
     this.loadInitialData();
     this.setupFormListeners();
   }
 
-  ngAfterViewInit() {
-    this.monthlyPaymentsSource.paginator = this.monthlyPaymentsTblpaginator;
-    this.monthlyPaymentsSource.sort = this.monthlyPaymentsTblSort;
+  private init() {
+    this.isLoading = false;
 
-    this.repairsSource.paginator = this.repairsTblpaginator;
-    this.repairsSource.sort = this.repairsTblSort;
+    this.monthlyPaymentsTotalCost = 0;
+    this.repairsTotalCost = 0;
+    this.contributionsTotalAmount = 0;
 
-    this.contributionsSource.paginator = this.contributionsTblpaginator;
+    this.monthlyPaymentsSelected = [];
+    this.repairsSelected = [];
+    this.contributionsSelected = [];
+
+    this.remainingAmount = 0;
+    this.summaryItems = [];
   }
 
   private buildForm(): void {
@@ -207,16 +150,8 @@ export class CreatePaymentComponent
   }
 
   private loadInitialData() {
-    this.paymentMethods$ = this.selectOptionsService.getOptions(
-      'paymentMethods'
-    );
+    this.paymentMethods$ = this.dataService.getData('paymentMethods');
     this.banks$ = this.bankService.getBanks();
-  }
-
-  clearFormData() {
-    this.monthlyPaymentsSelection.clear();
-    this.repairsSelection.clear();
-    this.neighborContributions = {};
   }
 
   private setupFormListeners() {
@@ -224,8 +159,44 @@ export class CreatePaymentComponent
 
     this.newRecord$ = new Subject<any>();
 
-    this.neighborDNI$ = new Subject<string>();
     this.neighborID$ = new Subject<number>();
+
+    const neighborDNI$ = this.neighborGroup
+      .get('neighborDNI')
+      .valueChanges.pipe(
+        debounceTime(450),
+        map(val => val.toUpperCase())
+      );
+
+    this.neighborService
+      .getNeighborByDNI(neighborDNI$)
+      .pipe(takeUntil(this.signal$))
+      .subscribe((res: any) => {
+        let view;
+
+        if (res.data) {
+          const neighbor = res.data;
+          this.neighborGroup.controls['neighborID'].setValue(neighbor.id);
+          this.neighborID$.next(neighbor.id);
+          this.neighborFullName = neighbor.fullname;
+          this.removeNeighborControls();
+          view = this.neighborFoundComp.createEmbeddedView(null);
+        } else {
+          // Vecino no existe
+          view = this.neighborNotFoundComp.createEmbeddedView(null);
+          this.addNeighborControls();
+          this.neighborID$.next(-1);
+          this.neighborGroup.controls['neighborID'].setValue(-1);
+        }
+
+        this.clearSelectTableService.clearTable(true);
+        this.neighborContainer.remove();
+        this.neighborContainer.insert(view);
+      });
+
+    this.monthlyPayments$ = this.monthlyPaymentService.getUnpaidMonthlyPayments(
+      this.neighborID$
+    );
 
     this.paymentService
       .createPayment(this.newRecord$)
@@ -252,32 +223,7 @@ export class CreatePaymentComponent
         }));
       }); */
 
-    this.neighborService
-      .getNeighborByDNI(this.neighborDNI$)
-      .pipe(takeUntil(this.signal$))
-      .subscribe((res: any) => {
-        let view;
-
-        if (res.data) {
-          const neighbor = res.data;
-          this.neighborGroup.controls['neighborID'].setValue(neighbor.id);
-          this.neighborID$.next(neighbor.id);
-          this.neighborFullName = neighbor.fullname;
-          this.removeNeighborControls();
-          view = this.neighborFoundComp.createEmbeddedView(null);
-        } else {
-          view = this.neighborNotFoundComp.createEmbeddedView(null);
-          this.neighborGroup.controls['neighborID'].setValue(-1);
-        }
-
-        this.clearFormData();
-        this.neighborContainer.remove();
-        this.neighborContainer.insert(view);
-      });
-
-    /* this.monthlyPaymentService
-      .getUnpaidMonthlyPayments(this.neighborID$)
-      .pipe(takeUntil(this.signal$))
+    /* .pipe(takeUntil(this.signal$))
       .subscribe((monthlyPayments: MonthlyPayment[]) => {
         this.monthlyPaymentsSource.data = monthlyPayments.map((el, index) => ({
           ...el,
@@ -303,10 +249,11 @@ export class CreatePaymentComponent
         [
           Validators.required,
           Validators.pattern('^[VE|ve]-[0-9]+'),
+          Validators.minLength(7),
           Validators.maxLength(10)
         ]
       ],
-      neighborID: ['-1', [Validators.required]]
+      neighborID: [-1, [Validators.required]]
     });
   }
 
@@ -329,11 +276,13 @@ export class CreatePaymentComponent
     return this.paymentForm.controls;
   }
 
-  neighborDNIChange($event) {
-    this.neighborDNI$.next($event.target.value);
-  }
-
   private addNeighborControls() {
+    if (this.doesNeighborControlsExist()) {
+      return;
+    }
+
+    console.log('Se va a agregar los controles del vecino');
+
     this.neighborGroup.addControl(
       'fullName',
       new FormControl('', [
@@ -356,6 +305,8 @@ export class CreatePaymentComponent
         Validators.pattern('^([A-Z]|[a-z])-[0-9]+$')
       ])
     );
+
+    console.log(this.neighborGroup);
   }
 
   private removeNeighborControls() {
@@ -366,148 +317,92 @@ export class CreatePaymentComponent
   }
 
   addNeighbor() {
-    this.addNeighborControls();
     const view = this.newNeighborComp.createEmbeddedView(null);
     this.neighborContainer.remove();
     this.neighborContainer.insert(view);
   }
 
-  /** ----- MONTHLY PAYMENTS TABLE METHODS ---- */
-
-  /** Whether the number of selected elements matches the total number of rows. */
-  isAllMonthlyPaymentsSelected() {
-    const numSelected = this.monthlyPaymentsSelection.selected.length;
-    const numRows = this.monthlyPaymentsSource.data.length;
-    return numSelected === numRows;
-  }
-
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
-  masterToggleMonthlyPaymentsTbl() {
-    this.isAllMonthlyPaymentsSelected()
-      ? this.monthlyPaymentsSelection.clear()
-      : this.monthlyPaymentsSource.data.forEach(row =>
-          this.monthlyPaymentsSelection.select(row)
-        );
-  }
-
-  getTotalCostMonthlyPayments() {
-    const costs = this.monthlyPaymentsSelection.selected.map(el => el.cost);
-    return costs.reduce((accumulator, el) => accumulator + el, 0);
-  }
-
-  /** The label for the checkbox on the passed row */
-  checkboxLabelMonthlyPaymentsTbl(row?: any): string {
-    if (!row) {
-      return `${
-        this.isAllMonthlyPaymentsSelected() ? 'select' : 'deselect'
-      } all`;
-    }
-    return `${
-      this.monthlyPaymentsSelection.isSelected(row) ? 'deselect' : 'select'
-    } row ${row.position + 1}`;
-  }
-
-  toggleMonthlyPayment($event, row) {
-    this.monthlyPaymentsSelection.toggle(row);
-  }
-
-  /** ----- REPAIRS TABLE METHODS ---- */
-
-  /** Whether the number of selected elements matches the total number of rows. */
-  isAllRepairsSelected() {
-    const numSelected = this.repairsSelection.selected.length;
-    const numRows = this.repairsSource.data.length;
-    return numSelected === numRows;
-  }
-
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
-  masterToggleRepairsTbl() {
-    this.isAllRepairsSelected()
-      ? this.repairsSelection.clear()
-      : this.repairsSource.data.forEach(row =>
-          this.repairsSelection.select(row)
-        );
-  }
-
-  getTotalCostRepairs() {
-    const costs = this.repairsSelection.selected.map(el => el.cost);
-    return costs.reduce((accumulator, el) => accumulator + el, 0);
-  }
-
-  /** The label for the checkbox on the passed row */
-  checkboxLabelRepairsTbl(row?: any): string {
-    if (!row) {
-      return `${this.isAllRepairsSelected() ? 'select' : 'deselect'} all`;
-    }
-    return `${
-      this.repairsSelection.isSelected(row) ? 'deselect' : 'select'
-    } row ${row.position + 1}`;
-  }
-
-  toggleRepair($event, row) {
-    this.repairsSelection.toggle(row);
-  }
-
-  /** ----- CONTRIBUTIONS TABLE METHODS ---- */
-  getTotalContribution() {
-    // Se puede implementar de mejor manera
-    return Object.values(this.neighborContributions).reduce(
-      (accumulator: number, el: number) => accumulator + el,
-      0
+  private doesNeighborControlsExist(): boolean {
+    return (
+      this.neighborGroup.get('fullName') !== null &&
+      this.neighborGroup.get('phoneNumber') !== null &&
+      this.neighborGroup.get('email') !== null &&
+      this.neighborGroup.get('houseNumber') !== null
     );
   }
 
-  private getContributedContributions() {
-    return this.contributionsSource.data.reduce((arr, el, index) => {
-      if (this.neighborContributions[index] > 0) {
-        arr.push({ ...el, amount: this.neighborContributions[index] });
-      }
-      return arr;
-    }, []);
+  /** ----- MONTHLY PAYMENTS ---- */
+
+  public receiveMonthlyPaymentsTotalCost($event) {
+    console.log(`El costo total de las mensualidades es : ${$event}`);
+    this.monthlyPaymentsTotalCost = $event;
   }
 
-  /* ---------------SUMMARY  TABLE  METHODS---------------- */
-
-  getTotalSummary() {
-    return this.summaryElements
-      .map(el => el.amount)
-      .reduce((accumulator, el) => accumulator + el, 0);
+  public receiveMonthlyPaymentsSelected($event) {
+    console.log(`Las mensualidades seleccionadas son`);
+    console.log($event);
+    this.monthlyPaymentsSelected = $event;
   }
 
-  getAmountRemaining() {
-    return this.paymentGroup.controls['amount'].value - this.getTotalSummary();
+  /** ----- REPAIRS ---- */
+  public receiveRepairsTotalCost($event) {
+    console.log(`El costo total de las reparaciones es : ${$event}`);
+    this.repairsTotalCost = $event;
   }
 
-  isEmptyArr(arr: any[]): boolean {
-    return arr.length === 0;
+  public receiveRepairsSelected($event) {
+    console.log(`Las reparaciones seleccionadas son`);
+    console.log($event);
+    this.repairsSelected = $event;
   }
 
-  receiveStep($event) {
+  /** CONTRIBUTIONS */
+
+  public receiveContributionsTotalAmount($event) {
+    console.log(`El costo total de las reparaciones es : ${$event}`);
+    this.repairsTotalCost = $event;
+  }
+
+  public receiveContributionsSelected($event) {
+    console.log(`Las contribuciones seleccionadas son`);
+    console.log($event);
+    this.repairsSelected = $event;
+  }
+
+  /** SUMMARY */
+  public receiveRemainingAmount($event) {
+    console.log(`El restante es`);
+    console.log($event);
+    this.remainingAmount = $event;
+  }
+
+  /** ---------------- */
+
+  public receiveStep($event) {
     if (this.isLastStep($event.selectedIndex)) {
-      this.summaryElements = this.monthlyPaymentsSelection.selected.map(el => {
-        return { title: `${el.month} ${el.year}`, amount: el.cost };
-      });
-
-      this.summaryElements = this.summaryElements.concat(
-        this.repairsSelection.selected.map(el => {
-          return { title: el.title, amount: el.cost };
-        })
-      );
-
-      this.summaryElements = this.summaryElements.concat(
-        this.getContributedContributions()
-      );
-      console.log(this.summaryElements);
-
-      this.summarySource = new MatTableDataSource<any>(this.summaryElements);
+      // this.addSummaryItems();
     }
   }
+
+  /* private addSummaryItems(){
+    this.summaryItems = this.monthlyPaymentsSelected.map(el => {
+      return { title: `${el.month} ${el.year}`, amount: el.cost };
+    });
+
+    this.summaryItems = this.summaryItems.concat(
+      this.repairsSelected.map(el => {
+        return { title: el.title, amount: el.cost };
+      })
+    );
+
+    this.summaryItems = this.summaryItems.concat(
+      this.contributionsSelected
+    );
+  } */
 
   private isLastStep(index): boolean {
     return index === 5;
   }
-
-  /*  --------------------------------------------- */
 
   get isElectronicPayment(): boolean {
     return this.paymentGroup.get('paymentMethod').value !== 'Efectivo';
@@ -533,7 +428,7 @@ export class CreatePaymentComponent
   }
 
   createPayment() {
-    if (this.getAmountRemaining() < 0) {
+    if (this.remainingAmount < 0) {
       console.log('El pago no puede ser procesado');
     } else {
       console.log('El pago fue procesado');
@@ -542,9 +437,9 @@ export class CreatePaymentComponent
 
       const payment: Payment = {
         ...this.paymentGroup.value,
-        monthlyPayments: this.monthlyPaymentsSelection.selected,
-        repairs: this.repairsSelection.selected,
-        contributions: this.getContributedContributions()
+        monthlyPayments: this.monthlyPaymentsSelected,
+        repairs: this.repairsSelected,
+        contributions: this.contributionsSelected
       };
 
       const paymentModel = new PaymentModel(payment);
@@ -565,5 +460,6 @@ export class CreatePaymentComponent
     // Signal all streams to complete
     this.signal$.next();
     this.signal$.complete();
+    this.clearSelectTableService.clearTable$.complete();
   }
 }
