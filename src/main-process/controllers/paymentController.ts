@@ -14,7 +14,7 @@ const House = models.House;
 const Electronic_Payment = models.Electronic_Payment;
 const Bank = models.Bank;
 
-const Monthly_Payments_Record = models.Monthly_Payments_Record;
+const Monthly_Payment_Record = models.Monthly_Payment_Record;
 const Monthly_Payment_Cost = models.Monthly_Payment_Cost;
 const Monthly_Payment_Year_Month = models.Monthly_Payment_Year_Month;
 const Repair = models.Repair;
@@ -248,9 +248,6 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
 }
 
 async function create(_payment, _neighbor) {
-  console.log(`Payment: ${_payment}`);
-  console.log(`Neigbor: ${_neighbor}`);
-
   try {
     // 1. Verificar que existan las mensualidades
     const all_monthly_payments_exists = await monthlyPaymentsExists(
@@ -312,12 +309,13 @@ async function create(_payment, _neighbor) {
 
       // 4.1. Obtener el costo actual de la mensualidad
       let monthly_payments_cost = null;
+
       if (total_monthly_payments_items > 0) {
         monthly_payments_cost = await Monthly_Payment_Cost.findOne({
           order: [['id', 'DESC']]
         });
 
-        debit += total_monthly_payments_items * monthly_payments_cost;
+        debit += total_monthly_payments_items * monthly_payments_cost.cost;
       }
 
       // 4.2. Obtener el costo de cada reparacion por vecino
@@ -370,7 +368,7 @@ async function create(_payment, _neighbor) {
       let remainder = 0;
       let last_monthly_payment_paid = null;
 
-      // 4.4. Obtener el ultimo pago del vecino
+      // 4.4. Obtener el ultimo pago de mensualidad del vecino
       if (_neighbor['neighborID'] !== -1) {
         const payment_join = {
           model: Payment,
@@ -390,7 +388,7 @@ async function create(_payment, _neighbor) {
           ]
         };
 
-        last_monthly_payment_paid = await Monthly_Payments_Record.findOne(
+        last_monthly_payment_paid = await Monthly_Payment_Record.findOne(
           options
         );
 
@@ -451,7 +449,7 @@ async function create(_payment, _neighbor) {
 
       // 7. Registrar las mensualidades pagadas
       if (total_monthly_payments_items > 0) {
-        include_models.push(Monthly_Payments_Record);
+        include_models.push(Monthly_Payment_Record);
         credit -= _payment.monthlyPayments.length * monthly_payments_cost;
         payment_attributes[
           'Monthly_Payments_Record'
@@ -463,10 +461,20 @@ async function create(_payment, _neighbor) {
       // 8. Validar que el restante sea mayor al minimo necesario para abonar en la siguiente mensualidad
       if (credit >= min_remainder) {
         if (payment_attributes['Monthly_Payments_Record']) {
-          // 8.1. Asignar al nuevo pago de mensualidad que será creado
+          // 8.1. Asignar el nuevo remanente al nuevo pago de mensualidad que será creado
           payment_attributes['Monthly_Payments_Record'][
             _payment.monthlyPayments.length - 1
           ].amount += credit;
+
+          if (remainder > 0) {
+            // Eliminar el remanente del último pago
+            last_monthly_payment_paid.set(
+              'amount',
+              last_monthly_payment_paid.amount - remainder,
+              { raw: true }
+            );
+            await last_monthly_payment_paid.save();
+          }
         } else if (last_monthly_payment_paid) {
           // 8.2. Si no existe una nueva mensualidad a crear, entonces asignar el remanente a la ultima mensualidad creada
           last_monthly_payment_paid.set(

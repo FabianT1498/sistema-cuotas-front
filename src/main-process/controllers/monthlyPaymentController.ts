@@ -8,6 +8,8 @@ const Monthly_Payments_Record = models.Monthly_Payments_Record;
 const Monthly_Payment_Year_Month = models.Monthly_Payment_Year_Month;
 const Monthly_Payment_Cost = models.Monthly_Payment_Cost;
 const Payment = models.Payment;
+const sequelize = models.sequelize;
+
 const Neighbor = models.Neighbor;
 const Op = Sequelize.Op;
 
@@ -77,18 +79,24 @@ async function getUnpaidMonthlyPayments(neighborID = null) {
                 WHERE B.C IS NULL
         */
 
-      const query = `SELECT * FROM Monthly_Payments_Years_Months LEFT JOIN
-            (SELECT monthly_payment_date FROM Monthly_Payments_Record
-                INNER JOIN Payments ON Payments.id = Monthly_Payments_Record.payment_id AND Payments.neighbor_id=${neighborID} 
-                    AS Paid_Monthly_Payments_Dates) 
-                        ON Monthly_Payments_Years_Months.payment_date = Paid_Monthly_Payments_Dates.monthly_payment_date
-                            WHERE Paid_Monthly_Payments_Dates.monthly_payment_date IS NULL
-                                AND Monthly_Payments_Years_Months.monthly_payment_year >= ${arr_created_at[0]}`;
+      const query = `
+        SELECT Monthly_Payments_Years_Months.monthly_payment_date, Monthly_Payments_Years_Months.monthly_payment_year,
+           Monthly_Payments_Years_Months.monthly_payment_month
+              FROM Monthly_Payments_Years_Months LEFT JOIN
+                (SELECT monthly_payment_date FROM Monthly_Payments_Record
+                    INNER JOIN Payments ON Payments.id = Monthly_Payments_Record.payment_id 
+                        AND Payments.neighbor_id=${neighborID}) AS Paid_Monthly_Payments_Dates
+                            ON Monthly_Payments_Years_Months.monthly_payment_date = Paid_Monthly_Payments_Dates.monthly_payment_date
+                                WHERE Paid_Monthly_Payments_Dates.monthly_payment_date IS NULL
+                                    AND Monthly_Payments_Years_Months.monthly_payment_year >= ${arr_created_at[0]}
+      `;
 
-      const monthly_payments_years_months = await Sequelize.query(query, {
+      const monthly_payments_years_months = await sequelize.query(query, {
         model: Monthly_Payment_Year_Month,
         mapToModel: true // pass true here if you have any mapped fields
       });
+
+      console.log(monthly_payments_years_months);
 
       /* const monthly_payment_record_join = {
             model: Monthly_Payments_Record,
@@ -126,7 +134,7 @@ async function getUnpaidMonthlyPayments(neighborID = null) {
         };
       });
 
-      console.log(data);
+      /* console.log(data); */
 
       response.message =
         monthly_payments_years_months.length > 0
