@@ -160,6 +160,7 @@
 					<app-monthly-payments-select
 						[monthlyPayments]="monthlyPayments$| async"
 						(totalCost)="receiveMonthlyPaymentsTotalCost($event)"
+						(monthlyPaymentCostEvent)="receiveMonthlyPaymentCost($event)"
 						(selected)="receiveMonthlyPaymentsSelected($event)"
 					>
 					</app-monthly-payments-select>
@@ -169,12 +170,12 @@
 					</div>
 				</mat-step>
 
-				<!-- <mat-step 
+				<mat-step 
 					[optional]="true"
 					label="Reparaciones"
 				>
 					<app-repairs-select
-						[repairs]="(repairs$| async)"
+						[repairs]="repairs$| async"
 						(totalCost)="receiveRepairsTotalCost($event)"
 						(selected)="receiveRepairsSelected($event)"
 					>
@@ -184,17 +185,28 @@
 						<button mat-button matStepperNext type="button">Siguiente</button>
 					</div>
 				</mat-step>
-				 -->
+				 
 
-				<!-- <mat-step [optional]="true" label="Contribuciones">
-					
+				<mat-step [optional]="true" label="Contribuciones">
+					<app-contributions-select
+						[contributions]="contributions$ | async"
+						(totalAmount)="receiveContributionsTotalAmount($event)"
+						(selected)="receiveContributionsSelected($event)"
+					>
+					</app-contributions-select>
 					<div>
 						<button mat-button matStepperPrevious type="button">Atras</button>
 						<button mat-button matStepperNext type="button">Siguiente</button>
 					</div>
-				</mat-step> -->
+				</mat-step>
 
 				<mat-step label="Completar">
+					<app-payment-summary-table
+						[items]="summaryItems"
+						[paymentInput]="paymentGroup.get('amount').value"
+						(remainingAmount)="receiveRemainingAmount($event)"
+					>
+					</app-payment-summary-table>
 					<div>
 						<button mat-button matStepperPrevious type="button">Atras</button>
 						<button mat-button matStepperNext type="submit" [disabled]="paymentForm.invalid">

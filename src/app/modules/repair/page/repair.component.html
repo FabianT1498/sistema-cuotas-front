@@ -1,0 +1,100 @@
+<div class="mat-elevation-z8">
+    
+    <form [formGroup]="searchRepairsForm">
+
+        <div class="flex-container">
+            <div class="item-flex">
+                <mat-form-field appearance="fill">
+                    <mat-label>Nombre de la reparación</mat-label>
+                    <input matInput formControlName="repairTitle" [placeholder]="'Nombre de la reparación'" >
+                </mat-form-field>
+            </div>
+            <div class="item-flex">
+                <mat-form-field appearance="fill">
+                    <mat-label>Introduzca el intervalo de tiempo de la reparación</mat-label>
+                    <mat-date-range-input [rangePicker]="picker">
+                        <input matStartDate formControlName="repairStartDate" placeholder="Fecha inicial">
+                        <input matEndDate formControlName="repairEndDate" placeholder="Fecha final">
+                    </mat-date-range-input>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-date-range-picker #picker></mat-date-range-picker>
+                </mat-form-field>
+            </div>
+            <div class="item-flex">
+                <mat-form-field appearance="fill">
+                    <mat-label>Estado de la reparación</mat-label>
+                    <mat-select formControlName="repairStatus">
+                        <mat-option [value]="0">
+                            {{'Todas'}}
+                        </mat-option>
+                        <mat-option [value]="1">
+                            {{'Por pagar'}}
+                        </mat-option>
+                        <mat-option [value]="2">
+                            {{'Pagada'}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </form>
+    
+    <div class="spinner-container" *ngIf="dataSource.loading$ | async">
+        <mat-spinner></mat-spinner>
+    </div>
+
+    <table mat-table [dataSource]="dataSource" matSort matSortActive="position" matSortDirection="asc">
+
+        <!-- ID Column -->
+        <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Nro.</th>
+            <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+        </ng-container>
+          
+       
+        <ng-container matColumnDef ="title">
+            <th mat-header-cell *matHeaderCellDef> Titulo </th>
+            <td mat-cell *matCellDef="let element"> {{element.title}} </td>
+        </ng-container>
+
+     
+        <ng-container matColumnDef="issueDate">
+            <th mat-header-cell *matHeaderCellDef>Fecha del suceso</th>
+            <td mat-cell *matCellDef="let element"> {{ element.issueDate }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cost">
+            <th mat-header-cell *matHeaderCellDef>Costo</th>
+            <td mat-cell *matCellDef="let element"> {{ element.cost }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="remaining">
+            <th mat-header-cell *matHeaderCellDef> Faltante </th>
+            <td mat-cell *matCellDef="let element"> {{ element.remaining }} </td>
+        </ng-container>
+    
+        <!-- Options Column -->
+        <ng-container matColumnDef="optionsRepair">
+            <th mat-header-cell *matHeaderCellDef> Opciones </th>
+            <td mat-cell *matCellDef="let element">
+                <a 
+                    [routerLink]="[element.id, 'editar']"
+                    routerLinkActive="list-item-active"
+                >
+                    <fa-icon [icon]="['fas', 'edit']"></fa-icon>
+                </a>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="repairsTblColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: repairsTblColumns;"
+            (click)="showRepairDetail($event, row)">
+        </tr>
+        
+        <!-- Row shown when there is no matching data. -->
+        <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="4">No hay reparaciones registradas</td>
+        </tr>
+    </table>
+    <mat-paginator [length]="repairsCount" [pageSize]="5" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+</div>

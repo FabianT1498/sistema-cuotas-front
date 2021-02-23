@@ -4,7 +4,7 @@ module.exports = (sequelize, DataTypes) => {
   class Contribution extends Model {
     static associate(models) {
       this.belongsToMany(models.Payment, {
-        through: 'Contributions_Payments',
+        through: models.Contribution_Payment,
         foreignKey: 'contribution_id'
       });
     }
@@ -24,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize: sequelize,
       modelName: 'Contribution',
       tableName: 'Contributions',
+      freezeTableName: true,
       timestamps: false
     }
   );

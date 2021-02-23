@@ -17,13 +17,16 @@ module.exports = (sequelize, DataTypes) => {
       });
 
       this.belongsToMany(models.Contribution, {
-        through: 'Contributions_Payments',
+        through: models.Contribution_Payment,
         foreignKey: 'payment_id'
       });
 
       this.belongsToMany(models.Repair, {
-        through: 'Repairs_Payments',
-        foreignKey: 'payment_id'
+        through: {
+          model: models.Repair_Payment
+        },
+        foreignKey: 'payment_id',
+        otherKey: 'repair_id'
       });
     }
   }
@@ -44,6 +47,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize: sequelize,
       modelName: 'Payment',
       tableName: 'Payments',
+      freezeTableName: true,
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at'

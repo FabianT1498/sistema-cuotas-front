@@ -1,0 +1,16 @@
+<fieldset [disabled]="isLoading">
+	<app-repair-form
+		[repair]="repair"
+		(formValuesValid)="receiveFormValuesValid($event)"
+	>
+	</app-repair-form>
+	<div>
+		<button mat-button type="button" [disabled]="!formValuesValid" (click)="updateRepair()">
+			<span [hidden]="isLoading">Actualizar reparación</span>
+			<span [hidden]="!isLoading">
+				<fa-icon icon="asterisk" size="2x" [spin]="true"></fa-icon>
+			</span>
+		</button>
+	</div>
+<fieldset>
+	

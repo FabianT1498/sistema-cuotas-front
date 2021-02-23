@@ -22,6 +22,7 @@ import {
   finalize,
   map,
   startWith,
+  take,
   takeUntil,
   tap
 } from 'rxjs/operators';
@@ -82,6 +83,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
   /** Monthly Payments component Outputs */
   monthlyPaymentsTotalCost: number;
+  monthlyPaymentCost: number;
   monthlyPaymentsSelected: MonthlyPayment[];
 
   /** Repairs component Outputs */
@@ -94,6 +96,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
   /** Summary component Input */
   summaryItems: any[];
+  months: string[];
 
   /** Remaining Amount */
   remainingAmount: number;
@@ -125,6 +128,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     this.isLoading = false;
 
     this.monthlyPaymentsTotalCost = 0;
+    this.monthlyPaymentCost = 0;
     this.repairsTotalCost = 0;
     this.contributionsTotalAmount = 0;
 
@@ -152,6 +156,10 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   private loadInitialData() {
     this.paymentMethods$ = this.dataService.getData('paymentMethods');
     this.banks$ = this.bankService.getBanks();
+    this.dataService
+      .getData('months')
+      .pipe(take(1))
+      .subscribe(val => (this.months = val));
   }
 
   private setupFormListeners() {
@@ -198,6 +206,10 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       this.neighborID$
     );
 
+    this.repairs$ = this.repairService.getUnpaidRepairs(this.neighborID$);
+
+    this.contributions$ = this.contributionService.getAll();
+
     this.paymentService
       .createPayment(this.newRecord$)
       .pipe(
@@ -212,34 +224,6 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       .subscribe(res => {
         console.log(res);
       });
-
-    /* this.contributionService
-      .getAll()
-      .pipe(takeUntil(this.signal$))
-      .subscribe((contribs: Contribution[]) => {
-        this.contributionsSource.data = contribs.map((el, index) => ({
-          ...el,
-          position: index + 1
-        }));
-      }); */
-
-    /* .pipe(takeUntil(this.signal$))
-      .subscribe((monthlyPayments: MonthlyPayment[]) => {
-        this.monthlyPaymentsSource.data = monthlyPayments.map((el, index) => ({
-          ...el,
-          position: index + 1
-        }));
-      }); */
-
-    /* this.repairService
-      .getUnpaidRepairs(this.neighborID$)
-      .pipe(takeUntil(this.signal$))
-      .subscribe((repairs: Repair[]) => {
-        this.repairsSource.data = repairs.map((el, index) => ({
-          ...el,
-          position: index + 1
-        }));
-      }); */
   }
 
   private createNeighborGroup(): FormGroup {
@@ -334,8 +318,15 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   /** ----- MONTHLY PAYMENTS ---- */
 
   public receiveMonthlyPaymentsTotalCost($event) {
-    console.log(`El costo total de las mensualidades es : ${$event}`);
+    console.log(
+      `El costo total de las mensualidades seleccionadas : ${$event}`
+    );
     this.monthlyPaymentsTotalCost = $event;
+  }
+
+  public receiveMonthlyPaymentCost($event) {
+    console.log(`El costo las mensualidades es : ${$event}`);
+    this.monthlyPaymentCost = $event;
   }
 
   public receiveMonthlyPaymentsSelected($event) {
@@ -360,13 +351,13 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
   public receiveContributionsTotalAmount($event) {
     console.log(`El costo total de las reparaciones es : ${$event}`);
-    this.repairsTotalCost = $event;
+    this.contributionsTotalAmount = $event;
   }
 
   public receiveContributionsSelected($event) {
     console.log(`Las contribuciones seleccionadas son`);
     console.log($event);
-    this.repairsSelected = $event;
+    this.contributionsSelected = $event;
   }
 
   /** SUMMARY */
@@ -380,13 +371,16 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
   public receiveStep($event) {
     if (this.isLastStep($event.selectedIndex)) {
-      // this.addSummaryItems();
+      this.addSummaryItems();
     }
   }
 
-  /* private addSummaryItems(){
+  private addSummaryItems() {
     this.summaryItems = this.monthlyPaymentsSelected.map(el => {
-      return { title: `${el.month} ${el.year}`, amount: el.cost };
+      return {
+        title: `${this.months[el.month - 1]} ${el.year}`,
+        amount: this.monthlyPaymentCost
+      };
     });
 
     this.summaryItems = this.summaryItems.concat(
@@ -395,10 +389,8 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       })
     );
 
-    this.summaryItems = this.summaryItems.concat(
-      this.contributionsSelected
-    );
-  } */
+    this.summaryItems = this.summaryItems.concat(this.contributionsSelected);
+  }
 
   private isLastStep(index): boolean {
     return index === 5;

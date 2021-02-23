@@ -1,9 +1,39 @@
 export {};
-const DB = require('./../database.ts');
-const Contributions = DB.contributions;
-const Payments = DB.payments;
+const models = require('../database/models/index');
 
-async function create(_contribution) {
+const Contribution = models.Contribution;
+
+const response = {
+  status: 1,
+  message: '',
+  data: {}
+};
+
+async function getAll() {
+  try {
+    const result = await Contribution.findAll();
+
+    const data = result.map(el => {
+      return {
+        id: el.id,
+        title: el.title
+      };
+    });
+
+    response.message =
+      data.length > 0
+        ? 'Contribuciones encontradas'
+        : 'No hay contribuciones registradas';
+    response.data = data;
+    return response;
+  } catch (error) {
+    response.status = 0;
+    response.message = 'Ocurrio un error al procesar las contribuciones';
+    return response;
+  }
+}
+
+/* async function create(_contribution) {
   try {
     const result = await Contributions.create(_contribution);
     const data = await result.json();
@@ -13,7 +43,7 @@ async function create(_contribution) {
     console.log(error);
     return 0;
   }
-}
+} */
 
 /* async function read(){
     try {
@@ -107,4 +137,4 @@ async function findPagosByLider(id_lider){
 
 } */
 
-/* module.exports = {create, read, update, delete_,Pagar,findPagosByLider,findPagosByContribucion} */
+module.exports = { getAll };

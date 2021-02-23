@@ -2,11 +2,11 @@ export {};
 const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  class Monthly_Payment_Cost extends Model {
+  class Repair_Payment extends Model {
     static associate(models) {}
   }
 
-  Monthly_Payment_Cost.init(
+  Repair_Payment.init(
     {
       id: {
         type: DataTypes.INTEGER,
@@ -14,18 +14,18 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         allowNull: false
       },
-      cost: DataTypes.FLOAT(15)
+      payment_id: DataTypes.INTEGER,
+      repair_id: DataTypes.INTEGER,
+      amount: DataTypes.FLOAT(15)
     },
     {
       sequelize: sequelize,
-      modelName: 'Monthly_Payment_Cost',
-      tableName: 'Monthly_Payments_Costs',
+      modelName: 'Repair_Payment',
+      tableName: 'Repairs_Payments',
       freezeTableName: true,
-      timestamps: true,
-      createdAt: 'created_at',
-      updatedAt: 'updated_at'
+      timestamps: false
     }
   );
 
-  return Monthly_Payment_Cost;
+  return Repair_Payment;
 };

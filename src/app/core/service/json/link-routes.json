@@ -18,14 +18,9 @@
         "icon": ["fas", "users"]
       },
       {
-        "title": "Cuotas",
-        "link": "/cuotas",
-        "icon": ["fas", "file-invoice-dollar"]
-      },
-      {
-        "title": "Hojas de calculo",
-        "link": "/hojas-calculo",
-        "icon": ["fas", "file-excel"]
+        "title": "Reparaciones",
+        "link": "/reparaciones",
+        "icon": ["fas", "wrench"]
       }
     ]
   },
@@ -60,32 +55,17 @@
     ]
   },
   {
-    "path": "hojas-calculo",
+    "path": "reparaciones",
     "links": [
       {
-        "title": "Importar hojas de calculo",
-        "link": "/hojas-calculo/importar",
+        "title": "Consultar reparaciones",
+        "link": "/reparaciones",
         "icon": ["fas", "home"]
       },
       {
-        "title": "Exportar hojas de calculo",
-        "link": "/hojas-calculo/exportar",
-        "icon": ["fas", "money-bill-wave"]
-      }
-    ]
-  },
-  {
-    "path": "cuotas",
-    "links": [
-      {
-        "title": "Consultar cuotas",
-        "link": "/cuotas",
-        "icon": ["fas", "home"]
-      },
-      {
-        "title": "Crear cuotas",
-        "link": "/cuotas/crear",
-        "icon": ["fas", "money-bill-wave"]
+        "title": "Crear reparación",
+        "link": "/reparaciones/crear",
+        "icon": ["fas", "wrench"]
       }
     ]
   }

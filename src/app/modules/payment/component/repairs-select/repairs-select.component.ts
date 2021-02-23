@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   OnInit,
   Output,
   SimpleChanges,
@@ -26,7 +27,8 @@ import { Repair } from '@data/schema/repair';
   templateUrl: './repairs-select.component.html',
   styleUrls: ['./repairs-select.component.scss']
 })
-export class RepairsSelectComponent implements OnInit, AfterViewInit {
+export class RepairsSelectComponent
+  implements OnInit, AfterViewInit, OnChanges {
   /** Repairs table */
   repairsTblColumns: string[];
   totalRepairsTblColumns: string[];
@@ -46,17 +48,8 @@ export class RepairsSelectComponent implements OnInit, AfterViewInit {
   @Output()
   selected = new EventEmitter<Repair[]>();
 
-  constructor(clearSelectTableService: ClearSelectTableService) {
-    this.repairsSelection = new SelectionModel<Repair>(true, []);
+  constructor(private clearSelectTableService: ClearSelectTableService) {
     this.repairsSource = new MatTableDataSource<Repair>();
-    this.repairsTblColumns = ['select', 'position', 'repair', 'date', 'cost'];
-    this.totalRepairsTblColumns = [
-      'emptyFooter',
-      'totalTitle',
-      'emptyFooter',
-      'emptyFooter',
-      'totalCost'
-    ];
   }
 
   ngOnInit() {
@@ -70,17 +63,15 @@ export class RepairsSelectComponent implements OnInit, AfterViewInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes);
-    /* this.repairsSource.data = monthlyPayments.map((el, index) => ({
-      ...el,
-      position: index + 1
-    })); */
+    this.repairsSource.data = Array.isArray(changes.repairs.currentValue)
+      ? changes.repairs.currentValue
+      : [];
   }
 
   private initData() {
     this.repairsSelection = new SelectionModel<Repair>(true, []);
-    this.repairsSource = new MatTableDataSource<Repair>();
-    this.repairsTblColumns = ['select', 'position', 'month', 'year', 'cost'];
+
+    this.repairsTblColumns = ['select', 'position', 'repair', 'date', 'cost'];
     this.totalRepairsTblColumns = [
       'emptyFooter',
       'totalTitle',

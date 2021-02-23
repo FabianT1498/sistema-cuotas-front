@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       sequelize: sequelize,
       modelName: 'Monthly_Payment_Year_Month',
       tableName: 'Monthly_Payments_Years_Months',
+      freezeTableName: true,
       timestamps: false
     }
   );

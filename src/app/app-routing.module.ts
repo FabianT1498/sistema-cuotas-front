@@ -24,6 +24,11 @@ const routes: Routes = [
         path: 'pagos',
         loadChildren: () =>
           import('@modules/payment/payment.module').then(m => m.PaymentModule)
+      },
+      {
+        path: 'reparaciones',
+        loadChildren: () =>
+          import('@modules/repair/repair.module').then(m => m.RepairModule)
       }
     ]
   },

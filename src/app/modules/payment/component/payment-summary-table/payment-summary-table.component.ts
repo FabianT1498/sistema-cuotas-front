@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   OnInit,
   Output,
   SimpleChanges
@@ -19,7 +20,7 @@ import { ClearSelectTableService } from '@shared/service/clear-select-table.serv
   templateUrl: './payment-summary-table.component.html',
   styleUrls: ['./payment-summary-table.component.scss']
 })
-export class PaymentSummaryTableComponent implements OnInit {
+export class PaymentSummaryTableComponent implements OnInit, OnChanges {
   /** Summary table */
   summarySource: MatTableDataSource<any>;
   summaryTblColumns: string[];
@@ -36,22 +37,31 @@ export class PaymentSummaryTableComponent implements OnInit {
   @Output()
   remainingAmount = new EventEmitter<number>();
 
-  constructor() {}
+  constructor(private clearService: ClearSelectTableService) {
+    this.summarySource = new MatTableDataSource<any>();
+  }
 
   ngOnInit() {
     this.initData();
+    this.addObservableListeners();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes);
-    /* this.monthlyPaymentsSource.data = monthlyPayments.map((el, index) => ({
-      ...el,
-      position: index + 1
-    })); */
+    this.summarySource.data = Array.isArray(changes.items.currentValue)
+      ? changes.items.currentValue
+      : [];
+  }
+
+  private addObservableListeners() {
+    this.clearService.clearTable$.subscribe(val => {
+      if (val) {
+        this.items = [];
+        this.summarySource.data = [];
+      }
+    });
   }
 
   private initData() {
-    this.summarySource = new MatTableDataSource<any>();
     this.summaryTblColumns = ['title', 'amountTitle'];
     this.totalSummaryTblColumns = ['totalTitle', 'totalSummary'];
     this.availableSummaryTblColumns = ['availableTitle', 'available'];

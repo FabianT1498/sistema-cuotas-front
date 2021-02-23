@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   OnInit,
   Output,
   SimpleChanges,
@@ -10,10 +11,8 @@ import {
 } from '@angular/core';
 
 /** Angular Material tables */
-import { SelectionModel } from '@angular/cdk/collections';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
 
 /** Services */
 import { ClearSelectTableService } from '@shared/service/clear-select-table.service';
@@ -26,7 +25,8 @@ import { Contribution } from '@data/schema/contribution';
   templateUrl: './contributions-select.component.html',
   styleUrls: ['./contributions-select.component.scss']
 })
-export class RepairsSelectComponent implements OnInit, AfterViewInit {
+export class ContributionsSelectComponent
+  implements OnInit, AfterViewInit, OnChanges {
   /** Contributions table */
   contributionsObj: any;
 
@@ -46,7 +46,9 @@ export class RepairsSelectComponent implements OnInit, AfterViewInit {
   @Output()
   selected = new EventEmitter<Contribution[]>();
 
-  constructor(clearSelectTableService: ClearSelectTableService) {}
+  constructor(private clearSelectTableService: ClearSelectTableService) {
+    this.contributionsSource = new MatTableDataSource<Contribution>();
+  }
 
   ngOnInit() {
     this.initData();
@@ -58,16 +60,15 @@ export class RepairsSelectComponent implements OnInit, AfterViewInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes);
-    /* this.repairsSource.data = monthlyPayments.map((el, index) => ({
-      ...el,
-      position: index + 1
-    })); */
+    this.contributionsSource.data = Array.isArray(
+      changes.contributions.currentValue
+    )
+      ? changes.contributions.currentValue
+      : [];
   }
 
   private initData() {
     this.contributionsObj = {};
-    this.contributionsSource = new MatTableDataSource<Contribution>();
     this.contributionsTblColumns = [
       'position',
       'contributionTitle',

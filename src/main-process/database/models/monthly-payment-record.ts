@@ -22,12 +22,15 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         allowNull: false
       },
-      amount: DataTypes.FLOAT(15)
+      amount: DataTypes.FLOAT(15),
+      payment_id: DataTypes.INTEGER,
+      monthly_payment_date: DataTypes.TEXT
     },
     {
       sequelize: sequelize,
       modelName: 'Monthly_Payment_Record',
       tableName: 'Monthly_Payments_Record',
+      freezeTableName: true,
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at'

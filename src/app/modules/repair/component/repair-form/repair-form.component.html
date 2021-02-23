@@ -1,0 +1,52 @@
+<form [formGroup]="repairForm">
+	
+	<div class="flex-container">
+
+		<input type="hidden" formControlName="id">
+
+		<div class="item-flex">
+			<mat-form-field>
+				<input 
+					matInput 
+					[placeholder]="'Titulo de la reparación'" 
+					formControlName="title"
+					required
+				>
+				<app-control-messages [control]="f['title']"></app-control-messages>    
+			</mat-form-field>
+		</div>
+
+		<div class="item-flex">
+			<mat-form-field>
+				<mat-label>Seleccione la fecha del suceso</mat-label>
+				<input matInput [matDatepicker]="picker" formControlName="issueDate">
+				<mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+				<mat-datepicker #picker></mat-datepicker>
+				<app-control-messages [control]="f['issueDate']"></app-control-messages>
+			</mat-form-field>
+		</div>
+		
+		<div class="flex-item">
+			<mat-form-field>
+				<mat-label>Costo de la reparación</mat-label>
+				<input type="text" matInput  [placeholder]="'Costo de la reparación'" formControlName="cost">
+				<app-control-messages [control]="f['cost']"></app-control-messages>
+			</mat-form-field>		
+		</div>
+
+		<div class="item-flex">
+			<mat-form-field>
+				<mat-label>Descripción</mat-label>
+				<textarea 
+					matInput
+					[placeholder]="'Descripción de la reparación'" 
+					formControlName="description"
+					required
+				>
+				</textarea>
+				<app-control-messages [control]="f['description']"></app-control-messages>   
+			</mat-form-field>
+		</div>
+
+	</div>
+</form>

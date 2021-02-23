@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import {
   catchError,
   debounceTime,
@@ -10,47 +10,104 @@ import {
   tap
 } from 'rxjs/operators';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Repair, RepairModel } from '../schema/repair';
 
-import { Repair } from '../schema/repair';
+import { IpcService } from '@app/service/ipc.service';
 
 import { handleError } from './handleError';
+import { RepairSearch } from '@data/interface/search-repairs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RepairService {
-  private repairsUrl = 'api/repairs'; // URL to web api
+  constructor(private ipc: IpcService) {}
 
-  constructor(private http: HttpClient) {}
-
-  getAll(): Observable<Repair[]> {
-    return this.http
-      .get<Repair[]>(this.repairsUrl)
-      .pipe(catchError(handleError<Repair[]>('getAll', [])));
+  getRepairs(data: Observable<RepairSearch>): Observable<any> {
+    return data.pipe(
+      switchMap(req => {
+        console.log(req);
+        return from(this.ipc.invoke('get-repairs', ...Object.values(req))).pipe(
+          map(res => {
+            if (res.status === 0) {
+              throw new Error(res.message);
+            }
+            console.log(res);
+            return res;
+          })
+        );
+      })
+    );
   }
 
+  getRepairsCount(): Observable<number> {
+    return from(this.ipc.invoke('get-repairs-count')).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+        return res.data;
+      })
+    );
+  }
+
+  createRepair(repair: RepairModel): Observable<any> {
+    return from(this.ipc.invoke('create-repair', repair)).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+
+        return res;
+      })
+    );
+  }
+
+  updateRepair(repair: RepairModel): Observable<any> {
+    return from(this.ipc.invoke('update-repair', repair)).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+
+        return res;
+      })
+    );
+  }
+
+  editRepair(repairID: string = '-1'): Observable<Repair> {
+    return from(this.ipc.invoke('edit-repair', repairID)).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+
+        return res.data;
+      })
+    );
+  }
+
+  /*
   getPaidRepairs(neighborID: string) {
     return this.http
       .get<Repair[]>(`${this.repairsUrl}/?neighborID=${neighborID}`)
       .pipe(catchError(handleError<Repair[]>('getPaidRepairs', [])));
-  }
+  } */
 
   getUnpaidRepairs(neighborID: Observable<number>): Observable<Repair[]> {
-    /* return this.http
-      .get<Repair[]>(`${this.repairsUrl}/?neighborID=${neighborID}`)
-      .pipe(catchError(handleError<Repair[]>('getUnpaidRepairs', []))); */
     return neighborID.pipe(
-      debounceTime(400),
       distinctUntilChanged(),
-      switchMap(id =>
-        this.http.get<Repair[]>(this.repairsUrl).pipe(
-          map((monthlyPayment, index) => {
-            console.log(`${index}: ${monthlyPayment}`);
-            return monthlyPayment;
+      switchMap(id => {
+        return from(this.ipc.invoke('get-unpaid-repairs', id)).pipe(
+          map(res => {
+            if (res.status === 0) {
+              throw new Error(res.message);
+            }
+            console.log(res.data);
+            return res.data;
           })
-        )
-      )
+        );
+      })
     );
   }
 }

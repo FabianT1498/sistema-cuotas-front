@@ -50,6 +50,8 @@ async function getUnpaidMonthlyPayments(neighborID = null) {
       ]
     };
 
+    let monthly_payments_years_months = null;
+
     if (neighborID === -1) {
       // Vecino no existe, entonces recuperar todos las mensualidades desde el año y mes actual
       const now = new Date();
@@ -58,6 +60,10 @@ async function getUnpaidMonthlyPayments(neighborID = null) {
       options['where']['monthly_payment_date'] = {
         [Op.gte]: [formatDateISO.formatDateISO(1, month, year)]
       };
+
+      monthly_payments_years_months = await Monthly_Payment_Year_Month.findAll(
+        options
+      );
     } else {
       const neighbor = await Neighbor.findOne({
         where: {
@@ -91,57 +97,25 @@ async function getUnpaidMonthlyPayments(neighborID = null) {
                                     AND Monthly_Payments_Years_Months.monthly_payment_year >= ${arr_created_at[0]}
       `;
 
-      const monthly_payments_years_months = await sequelize.query(query, {
+      monthly_payments_years_months = await sequelize.query(query, {
         model: Monthly_Payment_Year_Month,
         mapToModel: true // pass true here if you have any mapped fields
       });
-
-      console.log(monthly_payments_years_months);
-
-      /* const monthly_payment_record_join = {
-            model: Monthly_Payments_Record,
-            attributes: ['monthly_payment_date'],
-            required: false,
-            include: [
-              {
-                model: Payment,
-                required: true,
-                where: {
-                  neighbor_id: {
-                    [Op.eq]: [neighborID]
-                  },
-                }
-              }
-            ],
-          };
-
-          options['include'] = [monthly_payment_record_join];
-          options['where']['monthly_payment_date'] = {
-            [Op.eq]: [null]
-          }
-          options['where']['monthly_payment_year'] = {
-            [Op.gte]: [arr_created_at[0]]
-          }
-        }
-
-        const monthly_payments_years_months = await Monthly_Payment_Year_Month.findAll(options); */
-
-      const data = monthly_payments_years_months.map(el => {
-        return {
-          id: el.monthly_payment_date,
-          month: el.monthly_payment_month,
-          year: el.monthly_payment_year
-        };
-      });
-
-      /* console.log(data); */
-
-      response.message =
-        monthly_payments_years_months.length > 0
-          ? 'Mensualidades por pagar encontradas'
-          : 'No hay mensualidades por pagar';
-      response.data = data;
     }
+
+    const data = monthly_payments_years_months.map(el => {
+      return {
+        id: el.monthly_payment_date,
+        month: el.monthly_payment_month,
+        year: el.monthly_payment_year
+      };
+    });
+
+    response.message =
+      monthly_payments_years_months.length > 0
+        ? 'Mensualidades por pagar encontradas'
+        : 'No hay mensualidades por pagar';
+    response.data = data;
 
     return response;
   } catch (error) {

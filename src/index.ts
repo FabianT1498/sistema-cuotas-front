@@ -9,6 +9,8 @@ const bankController = require('./main-process/controllers/bankController');
 const paymentController = require('./main-process/controllers/paymentController');
 const neighborController = require('./main-process/controllers/neighborController');
 const monthlyPaymentController = require('./main-process/controllers/monthlyPaymentController');
+const repairController = require('./main-process/controllers/repairController');
+const contributionController = require('./main-process/controllers/contributionController');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -102,6 +104,43 @@ ipcMain.handle('get-unpaid-monthly-payments', async (event, ...args) => {
 
 ipcMain.handle('get-monthly-payment-cost', async (event, ...args) => {
   const result = await monthlyPaymentController.getMonthlyPaymentCost();
+  return result;
+});
+
+/** Repairs handle events */
+ipcMain.handle('get-unpaid-repairs', async (event, ...args) => {
+  const result = await repairController.getUnpaidRepairs(...args);
+  return result;
+});
+
+ipcMain.handle('create-repair', async (event, ...args) => {
+  const result = await repairController.create(...args);
+  return result;
+});
+
+ipcMain.handle('update-repair', async (event, ...args) => {
+  const result = await repairController.update(...args);
+  return result;
+});
+
+ipcMain.handle('get-repairs', async (event, ...args) => {
+  const result = await repairController.getRepairs(...args);
+  return result;
+});
+
+ipcMain.handle('edit-repair', async (event, ...args) => {
+  const result = await repairController.edit(...args);
+  return result;
+});
+
+ipcMain.handle('get-repairs-count', async (event, ...args) => {
+  const result = await repairController.getRepairsCount();
+  return result;
+});
+
+/** Contributions handle events */
+ipcMain.handle('get-all-contributions', async (event, ...args) => {
+  const result = await contributionController.getAll();
   return result;
 });
 

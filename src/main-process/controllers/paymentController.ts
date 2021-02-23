@@ -1,6 +1,6 @@
 export {};
 
-const Sequelize = require('sequelize');
+const { Sequelize, QueryTypes } = require('sequelize');
 
 var moment = require('moment');
 
@@ -17,10 +17,15 @@ const Bank = models.Bank;
 const Monthly_Payment_Record = models.Monthly_Payment_Record;
 const Monthly_Payment_Cost = models.Monthly_Payment_Cost;
 const Monthly_Payment_Year_Month = models.Monthly_Payment_Year_Month;
+
 const Repair = models.Repair;
+const Repair_Payment = models.Repair_Payment;
+
 const Contribution = models.Contribution;
+const Contribution_Payment = models.Contribution_Payment;
 
 const Op = Sequelize.Op;
+const sequelize = models.sequelize;
 
 const response = {
   status: 1,
@@ -249,30 +254,51 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
 
 async function create(_payment, _neighbor) {
   try {
+    const total_monthly_payments_items = _payment.monthlyPayments.length;
+    const total_repairs_items = _payment.repairs.length;
+    const total_contributions_items = _payment.contributions.length;
+
+    if (
+      total_monthly_payments_items +
+        total_repairs_items +
+        total_contributions_items ===
+      0
+    ) {
+      response.message = 'No ha seleccionado elementos por pagar o contribuir';
+      return response;
+    }
+
     // 1. Verificar que existan las mensualidades
-    const all_monthly_payments_exists = await monthlyPaymentsExists(
+    /* const all_monthly_payments_exists = await monthlyPaymentsExists(
       _payment.monthlyPayments
     );
+    */
 
-    if (!all_monthly_payments_exists) {
+    if (
+      total_monthly_payments_items > 0 &&
+      !(await monthlyPaymentsExists(_payment.monthlyPayments))
+    ) {
       response.message = 'Hay mensualidades que no existen';
       return response;
     }
 
     // 2. Verificar que existan las reparaciones
-    const all_repairs_exists = await repairsExists(_payment.repairs);
+    /* const all_repairs_exists = await repairsExists(_payment.repairs); */
 
-    if (!all_repairs_exists) {
+    if (total_repairs_items > 0 && !(await repairsExists(_payment.repairs))) {
       response.message = 'Hay reparaciones que no existen';
       return response;
     }
 
     // 3. Verificar que existan las contribuciones
-    const all_contributions_exists = await contributionsExists(
+    /* const all_contributions_exists = await contributionsExists(
       _payment.contributions
-    );
+    ); */
 
-    if (!all_contributions_exists) {
+    if (
+      total_contributions_items > 0 &&
+      !(await contributionsExists(_payment.contributions))
+    ) {
       response.message = 'Hay contribuciones que no existen';
       return response;
     }
@@ -299,10 +325,6 @@ async function create(_payment, _neighbor) {
     }
 
     if (neighbor) {
-      const total_monthly_payments_items = _payment.monthlyPayments.length;
-      const total_repairs_items = _payment.repairs.length;
-      const total_contributions_items = _payment.contributions.length;
-
       // 4. Verificar que el credito sea mayor que el debito
       let debit = 0;
       let credit = 0;
@@ -319,32 +341,21 @@ async function create(_payment, _neighbor) {
       }
 
       // 4.2. Obtener el costo de cada reparacion por vecino
-      let repairs_ids = [];
-      let repairs_costs_by_neighbor = [];
+      let repairs_costs_by_neighbor = null;
 
       if (total_repairs_items > 0) {
-        repairs_ids = _payment.repairs.map(el => {
-          return { id: el.id };
-        });
+        const repairs_ids = _payment.repairs.map(el => el.id).join();
 
-        repairs_costs_by_neighbor = await Repair.findAll({
-          attributes: {
-            include: [
-              [
-                // Note the wrapping parentheses in the call below!
-                Sequelize.literal(`cost / (
-                    SELECT COUNT(id)
-                    FROM Neighbors)`),
-                'cost_by_neighbor'
-              ]
-            ]
-          },
-          where: {
-            [Op.or]: repairs_ids
-          },
-          order: [['id', 'ASC']]
-        });
+        const query = `
+            SELECT Repairs.id, (Repairs.cost - COALESCE(SUM(Repairs_Payments.amount), 0)) 
+                / ((SELECT COUNT(Neighbors.id) FROM Neighbors) - COUNT(Repairs_Payments.repair_id)) AS cost_by_neighbor
+                    FROM Repairs LEFT JOIN Repairs_Payments ON Repairs_Payments.repair_id = Repairs.id
+                        WHERE Repairs.id IN (${repairs_ids}) GROUP BY (Repairs.id) ORDER BY Repairs.id ASC
+        `;
 
+        repairs_costs_by_neighbor = await sequelize.query(query, {
+          type: QueryTypes.SELECT
+        });
         console.log(repairs_costs_by_neighbor);
         debit += repairs_costs_by_neighbor.reduce(
           (accumulator, el) => accumulator + el.cost_by_neighbor,
@@ -363,59 +374,36 @@ async function create(_payment, _neighbor) {
       console.log(`El debito es ${debit}`);
 
       // This is for test purposes, delete later
-      const min_remainder = 500000; // HARD CODE
+      // const min_remainder = 500000; // HARD CODE
 
       let remainder = 0;
-      let last_monthly_payment_paid = null;
 
-      // 4.4. Obtener el ultimo pago de mensualidad del vecino
+      // 4.4. Obtener el remanente del vecino
       if (_neighbor['neighborID'] !== -1) {
-        const payment_join = {
-          model: Payment,
-          required: true,
-          where: {
-            neighbor_id: {
-              [Op.eq]: [neighbor.id]
-            }
-          }
-        };
+        const query = `
+          SELECT SUM(Payments.amount - (SELECT COALESCE(SUM(Monthly_Payments_Record.amount), 0) FROM Monthly_Payments_Record
+              WHERE Monthly_Payments_Record.payment_id = Payments.id) - (SELECT COALESCE(SUM(Repairs_Payments.amount), 0)
+                  FROM Repairs_Payments WHERE Repairs_Payments.payment_id = Payments.id) 
+                      - (SELECT COALESCE(SUM(Contributions_Payments.amount), 0) FROM Contributions_Payments 
+                          WHERE Contributions_Payments.payment_id = Payments.id)) AS remainder
+                              FROM Payments WHERE neighbor_id=${_neighbor['neighborID']}
+          `;
 
-        const options = {
-          include: [payment_join],
-          order: [
-            ['id', 'DESC'],
-            [Payment, 'id', 'DESC']
-          ]
-        };
-
-        last_monthly_payment_paid = await Monthly_Payment_Record.findOne(
-          options
+        const result = await sequelize.query(query, {
+          type: QueryTypes.SELECT,
+          raw: true
+        });
+        remainder = result.remainder !== null ? result.remainder : 0;
+        console.log(
+          `El vecino ${neighbor.fullname} dispone de un remanente de ${remainder}`
         );
-
-        // 4.5. Obtener el remanente del ultimo pago, si y solo si van a ser registrados nuevos pagos de mensualidad
-        if (last_monthly_payment_paid && total_monthly_payments_items > 0) {
-          const previous_monthly_payment_cost = await Monthly_Payment_Cost.findOne(
-            {
-              attributes: ['cost'],
-              where: {
-                created_at: {
-                  [Op.lte]: [last_monthly_payment_paid.updated_at]
-                }
-              },
-              order: [['id', 'DESC']]
-            }
-          );
-
-          remainder =
-            last_monthly_payment_paid.amount -
-            previous_monthly_payment_cost.cost;
-        }
       }
 
       // 4.6. Validar que el credito sea mayor que el debito
       credit = remainder + _payment.amount;
+      const remaining_balance = credit - debit;
 
-      if (credit < debit) {
+      if (remaining_balance < 0) {
         response.message = 'El debito supera al credito';
         return response;
       }
@@ -427,96 +415,11 @@ async function create(_payment, _neighbor) {
         neighbor_id: neighbor.getDataValue('id')
       };
 
-      const include_models = [];
-
-      // 5. Registrar los reparaciones pagadas
-      if (total_repairs_items > 0) {
-        include_models.push(Repair);
-        payment_attributes['Repair'] = repairs_costs_by_neighbor.map(el => {
-          credit -= el.cost_by_neighbor;
-          return { repair_id: el.id, amount: el.cost_by_neighbor };
-        });
-      }
-
-      // 6. Registrar las contribuciones contribuidas
-      if (total_contributions_items > 0) {
-        include_models.push(Contribution);
-        payment_attributes['Contribution'] = _payment.contributions.map(el => {
-          credit -= el.amount;
-          return { contribution_id: el.id, amount: el.amount };
-        });
-      }
-
-      // 7. Registrar las mensualidades pagadas
-      if (total_monthly_payments_items > 0) {
-        include_models.push(Monthly_Payment_Record);
-        credit -= _payment.monthlyPayments.length * monthly_payments_cost;
-        payment_attributes[
-          'Monthly_Payments_Record'
-        ] = _payment.monthlyPayments.map(el => {
-          return { monthly_payment_date: el.id, amount: monthly_payments_cost };
-        });
-      }
-
-      // 8. Validar que el restante sea mayor al minimo necesario para abonar en la siguiente mensualidad
-      if (credit >= min_remainder) {
-        if (payment_attributes['Monthly_Payments_Record']) {
-          // 8.1. Asignar el nuevo remanente al nuevo pago de mensualidad que será creado
-          payment_attributes['Monthly_Payments_Record'][
-            _payment.monthlyPayments.length - 1
-          ].amount += credit;
-
-          if (remainder > 0) {
-            // Eliminar el remanente del último pago
-            last_monthly_payment_paid.set(
-              'amount',
-              last_monthly_payment_paid.amount - remainder,
-              { raw: true }
-            );
-            await last_monthly_payment_paid.save();
-          }
-        } else if (last_monthly_payment_paid) {
-          // 8.2. Si no existe una nueva mensualidad a crear, entonces asignar el remanente a la ultima mensualidad creada
-          last_monthly_payment_paid.set(
-            'amount',
-            last_monthly_payment_paid.amount + credit,
-            { raw: true }
-          );
-          await last_monthly_payment_paid.save();
-        } else {
-          /** FALTA LA OPCIÓN PARA ABONAR EL RESTANTE EN CASO DE QUE NO EXISTA MENSUALIDADES PREVIAS O NUEVAS MENSUALIDADES A CREAR */
-        }
-      } else {
-        // 8.2. Abonar como contribución para la vigilancia
-        if (payment_attributes['Contribution']) {
-          const contrib_watchers_index = payment_attributes[
-            'Contribution'
-          ].findIndex(el => el.id === 4);
-
-          if (contrib_watchers_index !== -1) {
-            payment_attributes['Contribution'][
-              contrib_watchers_index
-            ].amount += credit;
-          } else {
-            payment_attributes['Contribution'].push({
-              contribution_id: 4,
-              amount: credit
-            });
-          }
-        } else {
-          payment_attributes['Contribution'] = [
-            { contribution_id: 4, amount: credit }
-          ];
-        }
-      }
-
       // 9. Crear el pago
-      const payment = await Payment.create(payment_attributes, {
-        include: include_models
-      });
+      const payment = await Payment.create(payment_attributes);
 
       if (payment) {
-        // 5.1. Crear el pago electronico si es el caso
+        // 9.1. Crear el pago electronico si es el caso
         if (_payment.paymentMethod !== 'Efectivo') {
           const electronicPayment = await Electronic_Payment.create({
             payment_id: payment.dataValues.id,
@@ -534,6 +437,39 @@ async function create(_payment, _neighbor) {
               data: {}
             };
           }
+        }
+
+        // 5. Registrar los reparaciones pagadas
+        if (total_repairs_items > 0) {
+          repairs_costs_by_neighbor.forEach(async el => {
+            await Repair_Payment.create({
+              payment_id: payment.dataValues.id,
+              repair_id: el.id,
+              amount: el.cost_by_neighbor
+            });
+          });
+        }
+
+        // 6. Registrar las contribuciones contribuidas
+        if (total_contributions_items > 0) {
+          _payment.contributions.forEach(async el => {
+            await Contribution_Payment.create({
+              payment_id: payment.dataValues.id,
+              contribution_id: el.id,
+              amount: el.amount
+            });
+          });
+        }
+
+        // 7. Registrar las mensualidades pagadas
+        if (total_monthly_payments_items > 0) {
+          _payment.monthlyPayments.forEach(async el => {
+            await Monthly_Payment_Record.create({
+              payment_id: payment.dataValues.id,
+              monthly_payment_date: el.id,
+              amount: monthly_payments_cost.cost
+            });
+          });
         }
 
         return {
@@ -649,3 +585,33 @@ module.exports = { getPayments, create, getPaymentsCount };
  ON `Electronic_Payment`.`bank_id` = `Electronic_Payment->Bank`.`id` ) ON `Payment`.`id` = `Electronic_Payment`.`payment_id` 
  AND `Electronic_Payment`.`bank_id` = '3' WHERE `Payment`.`payment_method` = 'Pago movil' LIMIT 0, 5;
  */
+
+/**
+ * SELECT ((Repairs.cost - (Select COALESCE(SUM(Repairs_Payments.amount), 0) FROM Repairs_Payments 
+		 		WHERE Repairs_Payments.repair_id = Repairs.id)) / 
+						(SELECT NULLIF(COUNT(Neighbors.id) - COUNT(Repairs_Payments.repair_id), 0) FROM Neighbors
+								INNER JOIN Payments ON Payments.neighbor_id = Neighbors.id
+										INNER JOIN Repairs_Payments ON Payments.id = Repairs_Payments.payment_id 
+						 						GROUP BY Repairs_Payments.repair_id)) 
+														AS cost_by_neighbor FROM Repairs WHERE Repairs.id = 1;
+ */
+
+/**
+  * Costo reparación - Cantidad pagada
+    SELECT (Repairs.cost - (Select COALESCE(SUM(Repairs_Payments.amount), 0) FROM Repairs_Payments 
+		 		WHERE Repairs_Payments.repair_id = Repairs.id)) AS cost_by_neighbor FROM Repairs WHERE Repairs.id = 1;
+	
+    Numero de vecinos que no han pagado (Total de vecinos - Cantidad de pagos de una reparación (Un pago único por vecino))
+    SELECT ((SELECT COUNT(Neighbors.id) FROM Neighbors) - COUNT(Repairs.id)) 
+        FROM Repairs INNER JOIN Repairs_Payments ON Repairs_Payments.repair_id = Repairs.id
+            WHERE Repairs.id = 1
+
+    CONSULTA COMPLETA
+
+    // Ob
+    SELECT (Repairs.cost - COALESCE(SUM(Repairs_Payments.amount), 0)) 
+        / ((SELECT COUNT(Neighbors.id) FROM Neighbors) - COUNT(Repairs.id))
+            FROM Repairs INNER JOIN Repairs_Payments ON Repairs_Payments.repair_id = Repairs.id
+                WHERE Repairs.id IN (${}) ORDER BY Repairs.id ASC
+    
+  */

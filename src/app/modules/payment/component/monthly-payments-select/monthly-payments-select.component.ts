@@ -54,6 +54,9 @@ export class MonthlyPaymentsSelectComponent
   totalCost = new EventEmitter<number>();
 
   @Output()
+  monthlyPaymentCostEv = new EventEmitter<number>();
+
+  @Output()
   selected = new EventEmitter<MonthlyPayment[]>();
 
   signal$ = new Subject();
@@ -77,7 +80,6 @@ export class MonthlyPaymentsSelectComponent
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes);
     this.monthlyPaymentsSource.data = Array.isArray(
       changes.monthlyPayments.currentValue
     )
@@ -116,7 +118,10 @@ export class MonthlyPaymentsSelectComponent
     this.monthlyPaymentService
       .getMonthlyPaymentCost()
       .pipe(take(1))
-      .subscribe(val => (this.monthlyPaymentCost = val));
+      .subscribe(val => {
+        this.monthlyPaymentCost = val;
+        this.monthlyPaymentCostEv.emit(val);
+      });
   }
 
   private addObservableListeners() {
