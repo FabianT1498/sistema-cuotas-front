@@ -1,0 +1,235 @@
+<fieldset [disabled]="isLoading">
+	<form (ngSubmit)="createPayment()" [formGroup]="paymentForm">
+		
+		<mat-horizontal-stepper formArrayName="paymentFormArr" linear (selectionChange)="receiveStep($event)">
+
+			<ng-container *ngIf="paymentForm">
+				<mat-step 
+					formGroupName="0" 
+					[stepControl]="f['paymentFormArr'].get([0])" 
+					label="Vecino"
+				>			
+					<div class="flex-container">
+						<div class="item-flex">
+							<mat-form-field>
+								<input 
+									matInput 
+									[placeholder]="'Cedula del vecino'" 
+									formControlName="neighborDNI"
+									required
+								>
+								<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['neighborDNI']"></app-control-messages>    
+							</mat-form-field>
+							<input type="hidden" formControlName="neighborID">
+						</div>
+						
+						<ng-container #neighborContainer></ng-container>
+						<ng-template #neighborFound>
+							<div class="item-flex"> {{neighborFullName}} </div>
+						</ng-template>
+						<ng-template #neighborNotFound>
+							<div class="item-flex">
+								<span class="mr-md-3">Este vecino no esta registrado, presione el boton para registrarlo</span>	
+								<button mat-mini-fab type="button" color="accent" (click)="addNeighbor()">
+									<mat-icon>add</mat-icon>
+								</button>						
+							</div>
+						</ng-template>
+						<ng-template #newNeighbor>
+							<div class="item-flex">
+								<mat-form-field>
+									<input 
+										matInput 
+										[placeholder]="'Nombre del vecino'" 
+										formControlName="fullName"  
+										required
+									>
+									<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['fullName']"></app-control-messages>  
+							
+								</mat-form-field>
+							</div>
+							<div class="item-flex">
+								<mat-form-field>
+									<input 
+										matInput 
+										[placeholder]="'Telefono del vecino'" 
+										formControlName="phoneNumber"
+									>
+									<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['phoneNumber']"></app-control-messages>  
+							
+								</mat-form-field>
+							</div>
+							<div class="item-flex">
+								<mat-form-field>
+									<input 
+										matInput 
+										[placeholder]="'Correo del vecino'" 
+										formControlName="email"
+									>
+									<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['email']"></app-control-messages>  
+								</mat-form-field>
+							</div>
+							<div class="item-flex">
+								<mat-form-field>
+									<input 
+										matInput 
+										[placeholder]="'Número de casa'" 
+										formControlName="houseNumber"
+									>
+									<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['houseNumber']"></app-control-messages>  
+								</mat-form-field>
+							</div>
+							<div class="item-flex">
+								<mat-form-field>
+									<input 
+										matInput 
+										[placeholder]="'Calle'" 
+										formControlName="street"
+									>
+									<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['street']"></app-control-messages>  
+								</mat-form-field>
+							</div>
+						</ng-template>
+					</div>
+					
+					<div>
+						<button mat-button matStepperNext type="button" [disabled]="neighborGroup.invalid">Siguiente</button>
+					</div>
+
+				</mat-step>
+
+				<mat-step 
+					formGroupName="1" 
+					[stepControl]="f['paymentFormArr'].get([1])" 
+					label="Datos del Pago"
+				>
+					<div class="flex-container">
+						<div class="item-flex">
+							<mat-form-field appearance="fill">
+								<mat-label>Seleccione la fecha del pago</mat-label>
+								<input matInput [matDatepicker]="picker" formControlName="paymentDate">
+								<mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+								<mat-datepicker #picker></mat-datepicker>
+								<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['paymentDate']"></app-control-messages>
+							</mat-form-field>
+						</div>
+
+						<div class="item-flex">
+							<mat-form-field appearance="fill">
+								<mat-label>Forma de pago</mat-label>
+								<select matNativeControl (change)="paymentMethodChange($event)" formControlName="paymentMethod" required>
+									<option 
+										*ngFor="let paymentMethod of paymentMethods$ | async" 
+										[value]="paymentMethod.name" 
+									>
+										{{paymentMethod.name}}
+									</option>
+								</select>
+								<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['paymentMethod']"></app-control-messages>   
+							</mat-form-field>
+						</div>
+
+						<ng-container *ngIf="isElectronicPayment">
+							<div class="item-flex">
+								<mat-form-field appearance="fill">
+									<mat-label>Banco</mat-label>
+									<select matNativeControl formControlName="bank" required>
+										<option *ngFor="let bank of banks$ | async" [value]="bank.id">
+											{{bank.name}}
+										</option>
+									</select>
+									<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['bank']"></app-control-messages>   
+								</mat-form-field> 
+							</div>
+							<div class="item-flex">
+								<mat-form-field appearance="fill">
+									<mat-label>Número de referencia</mat-label>
+									<input matInput [placeholder]="'Numero de referencia'" formControlName="referenceNumber" required>
+									<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['referenceNumber']"></app-control-messages>
+								</mat-form-field>
+							</div>
+						</ng-container>
+						<div class="flex-item">
+							<mat-form-field appearance="fill">
+								<mat-label>Monto</mat-label>
+								<input type="text" matInput  [placeholder]="'Monto'" formControlName="amount">
+								<app-control-messages [control]="f['paymentFormArr'].get([1]).controls['amount']"></app-control-messages>
+							</mat-form-field>		
+						</div>
+					</div>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+
+				<mat-step 
+					[optional]="true"
+					label="Mensualidades"
+				>
+					<app-monthly-payments-select
+						[monthlyPayments]="monthlyPayments$| async"
+						(totalCost)="receiveMonthlyPaymentsTotalCost($event)"
+						(monthlyPaymentCostEvent)="receiveMonthlyPaymentCost($event)"
+						(selected)="receiveMonthlyPaymentsSelected($event)"
+					>
+					</app-monthly-payments-select>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+
+				<mat-step 
+					[optional]="true"
+					label="Reparaciones"
+				>
+					<app-repairs-select
+						[repairs]="repairs$| async"
+						(totalCost)="receiveRepairsTotalCost($event)"
+						(selected)="receiveRepairsSelected($event)"
+					>
+					</app-repairs-select>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+				 
+
+				<mat-step [optional]="true" label="Contribuciones">
+					<app-contributions-select
+						[contributions]="contributions$ | async"
+						(totalAmount)="receiveContributionsTotalAmount($event)"
+						(selected)="receiveContributionsSelected($event)"
+					>
+					</app-contributions-select>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+
+				<mat-step label="Completar">
+					<app-payment-summary-table
+						[items]="summaryItems"
+						[paymentInput]="paymentGroup.get('amount').value"
+						(remainingAmount)="receiveRemainingAmount($event)"
+					>
+					</app-payment-summary-table>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="submit" [disabled]="paymentForm.invalid">
+							<span [hidden]="isLoading">Completar</span>
+							<span [hidden]="!isLoading">
+								<fa-icon icon="asterisk" size="2x" [spin]="true"></fa-icon>
+							</span>
+						</button>
+					</div>
+				</mat-step>
+				
+			</ng-container>	
+		</mat-horizontal-stepper>
+	</form>
+<fieldset>
+	
