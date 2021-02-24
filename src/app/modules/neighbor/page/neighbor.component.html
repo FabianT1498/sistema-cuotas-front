@@ -1,0 +1,76 @@
+<div class="mat-elevation-z8">
+    
+    <form [formGroup]="searchNeighborsForm">
+
+        <div class="flex-container">
+            <div class="item-flex">
+                <mat-form-field appearance="fill">
+                    <mat-label>Cedula del vecino</mat-label>
+                    <input matInput formControlName="dni" [placeholder]="'Cedula del vecino'" >
+                </mat-form-field>
+            </div>
+
+            <div class="item-flex">
+                <mat-form-field appearance="fill">
+                    <mat-label>Número de casa</mat-label>
+                    <input matInput formControlName="houseNumber" [placeholder]="'Número de casa'" >
+                </mat-form-field>
+            </div>
+        </div>
+
+    </form>
+    
+    <div class="spinner-container" *ngIf="dataSource.loading$ | async">
+        <mat-spinner></mat-spinner>
+    </div>
+
+    <table mat-table [dataSource]="dataSource" matSort matSortActive="id" matSortDirection="asc">
+
+        <!-- ID Column -->
+        <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Nro.</th>
+            <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+        </ng-container>
+          
+       
+        <ng-container matColumnDef ="fullName">
+            <th mat-header-cell *matHeaderCellDef> Nombre </th>
+            <td mat-cell *matCellDef="let element"> {{element.fullName}} </td>
+        </ng-container>
+
+     
+        <ng-container matColumnDef="dni">
+            <th mat-header-cell *matHeaderCellDef>Cédula</th>
+            <td mat-cell *matCellDef="let element"> {{ element.dni }} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="houseNumber">
+            <th mat-header-cell *matHeaderCellDef>Número de casa</th>
+            <td mat-cell *matCellDef="let element"> {{ element.houseNumber }} </td>
+        </ng-container>
+    
+        <!-- Options Column -->
+        <ng-container matColumnDef="optionsNeighbor">
+            <th mat-header-cell *matHeaderCellDef> Opciones </th>
+            <td mat-cell *matCellDef="let element">
+                <a 
+                    [routerLink]="[element.id, 'editar']"
+                    routerLinkActive="list-item-active"
+                >
+                    <fa-icon [icon]="['fas', 'edit']"></fa-icon>
+                </a>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="neighborsTblColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: neighborsTblColumns;"
+            (click)="showNeighborDetail($event, row)">
+        </tr>
+        
+        <!-- Row shown when there is no matching data. -->
+        <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="4">No hay vecinos registrados</td>
+        </tr>
+    </table>
+    <mat-paginator [length]="neighborsCount" [pageSize]="5" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+</div>

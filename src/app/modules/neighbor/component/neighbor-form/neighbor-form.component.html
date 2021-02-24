@@ -1,0 +1,74 @@
+<form [formGroup]="neighborForm">
+	<div class="flex-container">
+		
+		<div class="item-flex">
+			<mat-form-field>
+				<input 
+					matInput 
+					[placeholder]="'Cedula del vecino'" 
+					formControlName="dni"
+					required
+				>
+				<app-control-messages [control]="f['dni']"></app-control-messages>    
+			</mat-form-field>
+			<input type="hidden" formControlName="id">
+		</div>
+	
+		<div class="item-flex">
+			<mat-form-field>
+				<input 
+					matInput 
+					[placeholder]="'Nombre del vecino'" 
+					formControlName="fullName"  
+					required
+				>
+				<app-control-messages [control]="f['fullName']"></app-control-messages>  
+			</mat-form-field>
+		</div>
+
+		<div class="item-flex">
+			<mat-form-field>
+				<input 
+					matInput 
+					[placeholder]="'Telefono del vecino'" 
+					formControlName="phoneNumber"
+				>
+				<app-control-messages [control]="f['phoneNumber']"></app-control-messages>  
+			</mat-form-field>
+		</div>
+
+		<div class="item-flex">
+			<mat-form-field>
+				<input 
+					matInput 
+					[placeholder]="'Correo del vecino'" 
+					formControlName="email"
+				>
+				<app-control-messages [control]="f['email']"></app-control-messages>  
+			</mat-form-field>
+		</div>
+
+		<div class="item-flex">
+			<mat-form-field>
+				<input 
+					matInput 
+					[placeholder]="'Número de casa'" 
+					formControlName="houseNumber"
+				>
+				<app-control-messages [control]="f['houseNumber']"></app-control-messages>  
+			</mat-form-field>
+		</div>
+
+		<div class="item-flex">
+			<mat-form-field>
+				<input 
+					matInput 
+					[placeholder]="'Calle'" 
+					formControlName="street"
+				>
+				<app-control-messages [control]="f['street']"></app-control-messages>  
+			</mat-form-field>
+		</div>		
+
+	</div>
+</form>

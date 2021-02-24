@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { from, Observable, of } from 'rxjs';
 import {
-  catchError,
   debounceTime,
   distinctUntilChanged,
   switchMap,
@@ -9,26 +8,81 @@ import {
   filter
 } from 'rxjs/operators';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-
 import { IpcService } from '@app/service/ipc.service';
 
-import { Neighbor } from '../schema/neighbor';
-
-import { handleError } from './handleError';
+import { Neighbor, NeighborModel } from '../schema/neighbor';
+import { NeighborSearch } from '@data/interface/search-neighbors';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NeighborService {
-  private neighborsUrl = 'api/neighbors'; // URL to web api
+  constructor(private ipc: IpcService) {}
 
-  constructor(private http: HttpClient, private ipc: IpcService) {}
+  getNeighbors(data: Observable<NeighborSearch>): Observable<any> {
+    return data.pipe(
+      switchMap(req => {
+        console.log(req);
+        return from(
+          this.ipc.invoke('get-neighbors', ...Object.values(req))
+        ).pipe(
+          map(res => {
+            if (res.status === 0) {
+              throw new Error(res.message);
+            }
+            console.log(res);
+            return res;
+          })
+        );
+      })
+    );
+  }
 
-  getAll(): Observable<Neighbor[]> {
-    return this.http
-      .get<Neighbor[]>(this.neighborsUrl)
-      .pipe(catchError(handleError<Neighbor[]>('getAll', [])));
+  getNeighborsCount(): Observable<number> {
+    return from(this.ipc.invoke('get-neighbors-count')).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+        return res.data;
+      })
+    );
+  }
+
+  createNeighbor(neighbor: NeighborModel): Observable<any> {
+    return from(this.ipc.invoke('create-neighbor', neighbor)).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+
+        return res;
+      })
+    );
+  }
+
+  updateNeighbor(neighbor: NeighborModel): Observable<any> {
+    return from(this.ipc.invoke('update-neighbor', neighbor)).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw res;
+        }
+
+        return res;
+      })
+    );
+  }
+
+  editNeighbor(neighborID: string = '-1'): Observable<Neighbor> {
+    return from(this.ipc.invoke('edit-neighbor', neighborID)).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+
+        return res.data;
+      })
+    );
   }
 
   getNeighborByDNI(dni: Observable<string>): Observable<any> {

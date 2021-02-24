@@ -146,7 +146,32 @@ ipcMain.handle('get-all-contributions', async (event, ...args) => {
 
 /* Neighbors handle events */
 
+ipcMain.handle('get-neighbors', async (event, ...args) => {
+  const result = await neighborController.getNeighbors(...args);
+  return result;
+});
+
+ipcMain.handle('get-neighbors-count', async (event, ...args) => {
+  const result = await neighborController.getNeighborsCount();
+  return result;
+});
+
 ipcMain.handle('find-neighbor-by-dni', async (event, ...args) => {
   const result = await neighborController.findByDNI(...args);
+  return result;
+});
+
+ipcMain.handle('create-neighbor', async (event, ...args) => {
+  const result = await neighborController.create(...args);
+  return result;
+});
+
+ipcMain.handle('edit-neighbor', async (event, ...args) => {
+  const result = await neighborController.edit(...args);
+  return result;
+});
+
+ipcMain.handle('update-neighbor', async (event, ...args) => {
+  const result = await neighborController.update(...args);
   return result;
 });

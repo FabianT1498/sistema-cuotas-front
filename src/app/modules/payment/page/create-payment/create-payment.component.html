@@ -79,6 +79,16 @@
 									<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['houseNumber']"></app-control-messages>  
 								</mat-form-field>
 							</div>
+							<div class="item-flex">
+								<mat-form-field>
+									<input 
+										matInput 
+										[placeholder]="'Calle'" 
+										formControlName="street"
+									>
+									<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['street']"></app-control-messages>  
+								</mat-form-field>
+							</div>
 						</ng-template>
 					</div>
 					

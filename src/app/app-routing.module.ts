@@ -29,6 +29,13 @@ const routes: Routes = [
         path: 'reparaciones',
         loadChildren: () =>
           import('@modules/repair/repair.module').then(m => m.RepairModule)
+      },
+      {
+        path: 'vecinos',
+        loadChildren: () =>
+          import('@modules/neighbor/neighbor.module').then(
+            m => m.NeighborModule
+          )
       }
     ]
   },

@@ -438,10 +438,27 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       console.log(paymentModel);
 
       const neighbor: Neighbor = {
-        ...this.neighborGroup.value
+        id: this.neighborGroup.get('neighborID').value,
+        dni: this.neighborGroup.get('neighborDNI').value,
+        fullName: this.neighborGroup.get('fullName')
+          ? this.neighborGroup.get('fullName').value
+          : '',
+        phoneNumber: this.neighborGroup.get('phoneNumber')
+          ? this.neighborGroup.get('phoneNumber').value
+          : '',
+        email: this.neighborGroup.get('email')
+          ? this.neighborGroup.get('email').value
+          : '',
+        houseNumber: this.neighborGroup.get('houseNumber')
+          ? this.neighborGroup.get('houseNumber').value
+          : '',
+        street: this.neighborGroup.get('street')
+          ? this.neighborGroup.get('street').value
+          : ''
       };
 
       const neighborModel = new NeighborModel(neighbor);
+
       console.log(neighborModel);
 
       this.newRecord$.next({ paymentModel, neighborModel });
