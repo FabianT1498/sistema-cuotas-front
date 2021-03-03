@@ -40,6 +40,9 @@ export class ContributionsSelectComponent
   @Input()
   public contributions: Contribution[];
 
+  @Input()
+  public contributedContributions?: Contribution[];
+
   @Output()
   totalAmount = new EventEmitter<number>();
 
@@ -60,11 +63,30 @@ export class ContributionsSelectComponent
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.contributionsSource.data = Array.isArray(
+    const contributionsIsArr = Array.isArray(
       changes.contributions.currentValue
-    )
-      ? changes.contributions.currentValue
-      : [];
+    );
+
+    if (contributionsIsArr) {
+      this.contributionsSource.data = changes.contributions.currentValue;
+
+      if (this.contributedContributions) {
+        this.setContribsAmount();
+        this.getTotalContribution();
+        this.getContributedContributions();
+      }
+    }
+  }
+
+  private setContribsAmount() {
+    this.contributedContributions.forEach(prevContrib => {
+      const index = this.contributionsSource.data.findIndex(
+        contribs => contribs.id === prevContrib.id
+      );
+      if (index !== -1) {
+        this.contributionsObj[index] = prevContrib.amount;
+      }
+    });
   }
 
   private initData() {

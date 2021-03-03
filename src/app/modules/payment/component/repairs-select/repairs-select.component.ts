@@ -42,6 +42,9 @@ export class RepairsSelectComponent
   @Input()
   public repairs: Repair[];
 
+  @Input()
+  public selectedRepairs?: Repair[];
+
   @Output()
   totalCost = new EventEmitter<number>();
 
@@ -63,9 +66,23 @@ export class RepairsSelectComponent
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.repairsSource.data = Array.isArray(changes.repairs.currentValue)
+    /* this.repairsSource.data = Array.isArray(changes.repairs.currentValue)
       ? changes.repairs.currentValue
-      : [];
+      : []; */
+    const repairsIsArr = Array.isArray(changes.repairs.currentValue);
+
+    if (repairsIsArr) {
+      if (this.selectedRepairs) {
+        this.repairsSource.data = this.selectedRepairs.concat(
+          changes.repairs.currentValue
+        );
+        this.selectedRepairs.forEach(row => this.repairsSelection.select(row));
+        this.getTotalCostRepairs();
+        this.selected.emit(this.repairsSelection.selected);
+      } else {
+        this.repairsSource.data = changes.repairs.currentValue;
+      }
+    }
   }
 
   private initData() {

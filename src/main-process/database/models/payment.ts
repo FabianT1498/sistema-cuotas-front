@@ -41,7 +41,11 @@ module.exports = (sequelize, DataTypes) => {
       },
       amount: DataTypes.REAL,
       payment_date: DataTypes.TEXT,
-      payment_method: DataTypes.TEXT
+      payment_method: DataTypes.TEXT,
+      neighbor_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+      }
     },
     {
       sequelize: sequelize,

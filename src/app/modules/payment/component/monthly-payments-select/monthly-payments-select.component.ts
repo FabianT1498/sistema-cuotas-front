@@ -50,6 +50,9 @@ export class MonthlyPaymentsSelectComponent
   @Input()
   public monthlyPayments: MonthlyPayment[];
 
+  @Input()
+  public selectedMonthlyPayments?: MonthlyPayment[];
+
   @Output()
   totalCost = new EventEmitter<number>();
 
@@ -80,11 +83,24 @@ export class MonthlyPaymentsSelectComponent
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.monthlyPaymentsSource.data = Array.isArray(
+    const monthlyPaymentsIsArr = Array.isArray(
       changes.monthlyPayments.currentValue
-    )
-      ? changes.monthlyPayments.currentValue
-      : [];
+    );
+
+    if (monthlyPaymentsIsArr) {
+      if (this.selectedMonthlyPayments) {
+        this.monthlyPaymentsSource.data = this.selectedMonthlyPayments.concat(
+          changes.monthlyPayments.currentValue
+        );
+        this.selectedMonthlyPayments.forEach(row =>
+          this.monthlyPaymentsSelection.select(row)
+        );
+        this.getTotalCostMonthlyPayments();
+        this.selected.emit(this.monthlyPaymentsSelection.selected);
+      } else {
+        this.monthlyPaymentsSource.data = changes.monthlyPayments.currentValue;
+      }
+    }
   }
 
   private initData() {
@@ -169,6 +185,9 @@ export class MonthlyPaymentsSelectComponent
         this.isAllMonthlyPaymentsSelected() ? 'select' : 'deselect'
       } all`;
     }
+
+    console.log(`La posicion es ${row.position}`);
+
     return `${
       this.monthlyPaymentsSelection.isSelected(row) ? 'deselect' : 'select'
     } row ${row.position + 1}`;

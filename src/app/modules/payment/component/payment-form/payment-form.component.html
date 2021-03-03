@@ -1,0 +1,69 @@
+<form [formGroup]="paymentGroup">
+	<div class="flex-container">
+		
+		<input type="hidden" formControlName="id">
+
+		<div class="item-flex">
+			<mat-form-field appearance="fill">
+				<mat-label>Seleccione la fecha del pago</mat-label>
+				<input matInput [matDatepicker]="picker" formControlName="paymentDate">
+				<mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+				<mat-datepicker #picker></mat-datepicker>
+				<app-control-messages [control]="f['paymentDate']"></app-control-messages>
+			</mat-form-field>
+		</div>
+
+		<div class="item-flex">
+			<mat-form-field appearance="fill">
+				<mat-label>Forma de pago</mat-label>
+				<select matNativeControl (change)="paymentMethodChange($event)" formControlName="paymentMethod" required>
+					<option 
+						*ngFor="let paymentMethod of paymentMethods" 
+						[value]="paymentMethod.name"
+						[selected]="payment && paymentMethod.name === payment.paymentMethod"
+					>
+						{{paymentMethod.name}}
+					</option>
+				</select>
+				<app-control-messages [control]="f['paymentMethod']"></app-control-messages>   
+			</mat-form-field>
+		</div>
+
+		<ng-container *ngIf="isElectronicPayment">
+
+			<div class="item-flex">
+				<mat-form-field appearance="fill">
+					<mat-label>Banco</mat-label>
+					<select matNativeControl formControlName="bank" required>
+						<option 
+							*ngFor="let bank of banks"
+							[value]="bank.id"
+							[selected]="payment && bank.id === payment.bank"
+						>
+							{{ bank.name }}
+						</option>
+					</select>
+					<app-control-messages [control]="f['bank']"></app-control-messages>   
+				</mat-form-field> 
+			</div>
+
+			<div class="item-flex">
+				<mat-form-field appearance="fill">
+					<mat-label>Número de referencia</mat-label>
+					<input matInput [placeholder]="'Numero de referencia'" formControlName="referenceNumber" required>
+					<app-control-messages [control]="f['referenceNumber']"></app-control-messages>
+				</mat-form-field>
+			</div>
+
+		</ng-container>
+
+		<div class="flex-item">
+			<mat-form-field appearance="fill">
+				<mat-label>Monto</mat-label>
+				<input type="text" matInput  [placeholder]="'Monto'" formControlName="amount">
+				<app-control-messages [control]="f['amount']"></app-control-messages>
+			</mat-form-field>		
+		</div>
+
+	</div>
+</form>

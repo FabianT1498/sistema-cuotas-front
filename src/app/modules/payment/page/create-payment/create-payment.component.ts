@@ -290,6 +290,11 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       ])
     );
 
+    this.neighborGroup.addControl(
+      'street',
+      new FormControl('', [Validators.required])
+    );
+
     console.log(this.neighborGroup);
   }
 
@@ -298,6 +303,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     this.neighborGroup.removeControl('phoneNumber');
     this.neighborGroup.removeControl('email');
     this.neighborGroup.removeControl('houseNumber');
+    this.neighborGroup.removeControl('street');
   }
 
   addNeighbor() {

@@ -258,7 +258,7 @@ async function getUnpaidRepairs(neighborID = null) {
         return response;
       }
 
-      // Vecino existe, entonces recuperar las reparaciones que aun no ha pagado
+      // Vecino existe, entonces recuperar las reparaciones que aun no ha pagado y que no han sido pagadas en su totalidad
       query = `
         SELECT Repairs.id, Repairs.title, Repairs.issue_date, (Repairs.cost - COALESCE(SUM(Repairs_Payments.amount), 0)) 
             / ((SELECT COUNT(Neighbors.id) FROM Neighbors) - COUNT(Repairs_Payments.repair_id)) AS cost_by_neighbor

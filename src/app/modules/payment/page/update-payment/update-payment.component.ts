@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   Component,
   OnDestroy,
   OnInit,
@@ -7,7 +8,7 @@ import {
   ViewContainerRef,
   ViewEncapsulation
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   FormGroup,
   FormBuilder,
@@ -21,12 +22,14 @@ import {
   debounceTime,
   finalize,
   map,
-  startWith,
   take,
   takeUntil,
   tap
 } from 'rxjs/operators';
-import { Observable, Subject, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, throwError } from 'rxjs';
+
+// CHILD COMPONENTS
+import { PaymentFormComponent } from '@modules/payment/component/payment-form/payment-form.component';
 
 /** SERVICES */
 import { DataService } from '@app/service/data.service';
@@ -35,7 +38,6 @@ import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
 import { RepairService } from '@data/service/repair.service';
 import { ContributionService } from '@data/service/contribution.service';
 import { PaymentService } from '@data/service/payment.service';
-import { BankService } from '@data/service/bank.service';
 
 /* SHARED SERVICES */
 import { ClearSelectTableService } from '@shared/service/clear-select-table.service';
@@ -46,27 +48,22 @@ import { Neighbor, NeighborModel } from '@data/schema/neighbor';
 import { Repair } from '@data/schema/repair';
 import { Payment, PaymentModel } from '@data/schema/payment';
 import { Contribution } from '@data/schema/contribution';
-import { Bank } from '@data/schema/bank';
 
 @Component({
-  selector: 'app-create-payment',
-  templateUrl: './create-payment.component.html',
-  styleUrls: ['./create-payment.component.scss'],
+  selector: 'app-update-payment',
+  templateUrl: './update-payment.component.html',
+  styleUrls: ['./update-payment.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class CreatePaymentComponent implements OnInit, OnDestroy {
+export class UpdatePaymentComponent
+  implements OnInit, OnDestroy, AfterViewInit {
   /** Signal to unsubscribe from all observables */
   private signal$: Subject<any>;
 
   isLoading: boolean;
 
   /** Neighbor form section */
-  @ViewChild('neighborNotFound') neighborNotFoundComp: TemplateRef<any>;
-  @ViewChild('neighborFound') neighborFoundComp: TemplateRef<any>;
-  @ViewChild('newNeighbor') newNeighborComp: TemplateRef<any>;
-  @ViewChild('neighborContainer', { read: ViewContainerRef }) neighborContainer;
-  neighborFullName: string;
-  neighborID$: Subject<number>;
+  neighborID$: BehaviorSubject<number>;
 
   /** FORM GROUPS */
   paymentForm: FormGroup;
@@ -75,8 +72,6 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   paymentGroup: FormGroup;
 
   /** Observable data */
-  paymentMethods$: Observable<Array<any>>;
-  banks$: Observable<Bank[]>;
   monthlyPayments$: Observable<MonthlyPayment[]>;
   repairs$: Observable<Repair[]>;
   contributions$: Observable<Contribution[]>;
@@ -104,15 +99,19 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   /* New payment subject */
   newRecord$: Subject<any>;
 
+  paymentData: any;
+
+  @ViewChild(PaymentFormComponent) paymentFormChild: PaymentFormComponent;
+
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
+    private route: ActivatedRoute,
     private dataService: DataService,
     private neighborService: NeighborService,
     private monthlyPaymentService: MonthlyPaymentService,
     private repairService: RepairService,
     private contributionService: ContributionService,
-    private bankService: BankService,
     private paymentService: PaymentService,
     private clearSelectTableService: ClearSelectTableService
   ) {}
@@ -122,6 +121,12 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     this.buildForm();
     this.loadInitialData();
     this.setupFormListeners();
+  }
+
+  ngAfterViewInit() {
+    console.log(this.paymentFormChild.paymentGroup);
+    this.paymentFormArr.setControl(1, this.paymentFormChild.paymentGroup);
+    this.paymentGroup = this.paymentFormChild.paymentGroup;
   }
 
   private init() {
@@ -138,15 +143,23 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
     this.remainingAmount = 0;
     this.summaryItems = [];
+
+    this.paymentData = this.route.snapshot.data['paymentData'];
+
+    if (!this.paymentData) {
+      this.router.navigate(['/pagos']);
+    }
   }
 
   private buildForm(): void {
+    this.paymentGroup = this.formBuilder.group({});
+
     this.paymentFormArr = this.formBuilder.array([
       this.createNeighborGroup(),
-      this.createPaymentGroup()
+      this.paymentGroup
     ]);
+
     this.neighborGroup = this.paymentFormArr.get([0]) as FormGroup;
-    this.paymentGroup = this.paymentFormArr.get([1]) as FormGroup;
 
     this.paymentForm = this.formBuilder.group({
       paymentFormArr: this.paymentFormArr
@@ -154,8 +167,6 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   }
 
   private loadInitialData() {
-    this.paymentMethods$ = this.dataService.getData('paymentMethods');
-    this.banks$ = this.bankService.getBanks();
     this.dataService
       .getData('months')
       .pipe(take(1))
@@ -164,43 +175,11 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
   private setupFormListeners() {
     this.signal$ = new Subject();
-
     this.newRecord$ = new Subject<any>();
 
-    this.neighborID$ = new Subject<number>();
-
-    const neighborDNI$ = this.neighborGroup
-      .get('neighborDNI')
-      .valueChanges.pipe(
-        debounceTime(450),
-        map(val => val.toUpperCase())
-      );
-
-    this.neighborService
-      .getNeighborByDNI(neighborDNI$)
-      .pipe(takeUntil(this.signal$))
-      .subscribe((res: any) => {
-        let view;
-
-        if (res.data) {
-          const neighbor = res.data;
-          this.neighborGroup.controls['neighborID'].setValue(neighbor.id);
-          this.neighborID$.next(neighbor.id);
-          this.neighborFullName = neighbor.fullname;
-          this.removeNeighborControls();
-          view = this.neighborFoundComp.createEmbeddedView(null);
-        } else {
-          // Vecino no existe
-          view = this.neighborNotFoundComp.createEmbeddedView(null);
-          this.addNeighborControls();
-          this.neighborID$.next(-1);
-          this.neighborGroup.controls['neighborID'].setValue(-1);
-        }
-
-        this.clearSelectTableService.clearTable(true);
-        this.neighborContainer.remove();
-        this.neighborContainer.insert(view);
-      });
+    this.neighborID$ = new BehaviorSubject<number>(
+      this.paymentData ? this.paymentData.neighbor.id : -1
+    );
 
     this.monthlyPayments$ = this.monthlyPaymentService.getUnpaidMonthlyPayments(
       this.neighborID$
@@ -211,7 +190,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     this.contributions$ = this.contributionService.getAll();
 
     this.paymentService
-      .createPayment(this.newRecord$)
+      .updatePayment(this.newRecord$)
       .pipe(
         takeUntil(this.signal$),
         tap(record => this.router.navigate(['/pagos'])),
@@ -229,7 +208,10 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
   private createNeighborGroup(): FormGroup {
     return this.formBuilder.group({
       neighborDNI: [
-        '',
+        {
+          value: this.paymentData ? this.paymentData.neighbor.dni : '',
+          disabled: true
+        },
         [
           Validators.required,
           Validators.pattern('^[VE|ve]-[0-9]+'),
@@ -237,133 +219,48 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
           Validators.maxLength(10)
         ]
       ],
-      neighborID: [-1, [Validators.required]]
-    });
-  }
-
-  private createPaymentGroup(): FormGroup {
-    return this.formBuilder.group({
-      paymentDate: ['', Validators.required],
-      paymentMethod: ['Efectivo', Validators.required],
-      amount: [
-        0,
-        [
-          Validators.required,
-          Validators.min(0),
-          Validators.pattern('^[0-9]+(.[0-9]+)?$')
-        ]
+      neighborID: [
+        this.paymentData ? this.paymentData.neighbor.id : -1,
+        [Validators.required]
       ]
     });
-  }
-
-  get f() {
-    return this.paymentForm.controls;
-  }
-
-  private addNeighborControls() {
-    if (this.doesNeighborControlsExist()) {
-      return;
-    }
-
-    console.log('Se va a agregar los controles del vecino');
-
-    this.neighborGroup.addControl(
-      'fullName',
-      new FormControl('', [
-        Validators.required,
-        Validators.pattern('^([A-Z]|[a-z]| )+$')
-      ])
-    );
-    this.neighborGroup.addControl(
-      'phoneNumber',
-      new FormControl('', Validators.pattern('^[0-9]+-[0-9]+$'))
-    );
-    this.neighborGroup.addControl(
-      'email',
-      new FormControl('', Validators.email)
-    );
-    this.neighborGroup.addControl(
-      'houseNumber',
-      new FormControl('', [
-        Validators.required,
-        Validators.pattern('^([A-Z]|[a-z])-[0-9]+$')
-      ])
-    );
-
-    console.log(this.neighborGroup);
-  }
-
-  private removeNeighborControls() {
-    this.neighborGroup.removeControl('fullName');
-    this.neighborGroup.removeControl('phoneNumber');
-    this.neighborGroup.removeControl('email');
-    this.neighborGroup.removeControl('houseNumber');
-  }
-
-  addNeighbor() {
-    const view = this.newNeighborComp.createEmbeddedView(null);
-    this.neighborContainer.remove();
-    this.neighborContainer.insert(view);
-  }
-
-  private doesNeighborControlsExist(): boolean {
-    return (
-      this.neighborGroup.get('fullName') !== null &&
-      this.neighborGroup.get('phoneNumber') !== null &&
-      this.neighborGroup.get('email') !== null &&
-      this.neighborGroup.get('houseNumber') !== null
-    );
   }
 
   /** ----- MONTHLY PAYMENTS ---- */
 
   public receiveMonthlyPaymentsTotalCost($event) {
-    console.log(
-      `El costo total de las mensualidades seleccionadas : ${$event}`
-    );
     this.monthlyPaymentsTotalCost = $event;
   }
 
   public receiveMonthlyPaymentCost($event) {
-    console.log(`El costo las mensualidades es : ${$event}`);
     this.monthlyPaymentCost = $event;
   }
 
   public receiveMonthlyPaymentsSelected($event) {
-    console.log(`Las mensualidades seleccionadas son`);
-    console.log($event);
     this.monthlyPaymentsSelected = $event;
   }
 
   /** ----- REPAIRS ---- */
   public receiveRepairsTotalCost($event) {
-    console.log(`El costo total de las reparaciones es : ${$event}`);
     this.repairsTotalCost = $event;
   }
 
   public receiveRepairsSelected($event) {
-    console.log(`Las reparaciones seleccionadas son`);
-    console.log($event);
     this.repairsSelected = $event;
   }
 
   /** CONTRIBUTIONS */
 
   public receiveContributionsTotalAmount($event) {
-    console.log(`El costo total de las reparaciones es : ${$event}`);
     this.contributionsTotalAmount = $event;
   }
 
   public receiveContributionsSelected($event) {
-    console.log(`Las contribuciones seleccionadas son`);
-    console.log($event);
     this.contributionsSelected = $event;
   }
 
   /** SUMMARY */
   public receiveRemainingAmount($event) {
-    console.log(`El restante es`);
-    console.log($event);
     this.remainingAmount = $event;
   }
 
@@ -396,30 +293,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     return index === 5;
   }
 
-  get isElectronicPayment(): boolean {
-    return this.paymentGroup.get('paymentMethod').value !== 'Efectivo';
-  }
-
-  paymentMethodChange($event) {
-    if (this.isElectronicPayment) {
-      this.paymentGroup.addControl(
-        'bank',
-        new FormControl('', Validators.required)
-      );
-      this.paymentGroup.addControl(
-        'referenceNumber',
-        new FormControl('', [
-          Validators.required,
-          Validators.pattern('^([0-9]|[A-Z]|[a-z])+$')
-        ])
-      );
-    } else {
-      this.paymentGroup.removeControl('bank');
-      this.paymentGroup.removeControl('referenceNumber');
-    }
-  }
-
-  createPayment() {
+  updatePayment() {
     if (this.remainingAmount < 0) {
       console.log('El pago no puede ser procesado');
     } else {
@@ -437,34 +311,17 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       const paymentModel = new PaymentModel(payment);
       console.log(paymentModel);
 
-      const neighbor: Neighbor = {
-        id: this.neighborGroup.get('neighborID').value,
-        dni: this.neighborGroup.get('neighborDNI').value,
-        fullName: this.neighborGroup.get('fullName')
-          ? this.neighborGroup.get('fullName').value
-          : '',
-        phoneNumber: this.neighborGroup.get('phoneNumber')
-          ? this.neighborGroup.get('phoneNumber').value
-          : '',
-        email: this.neighborGroup.get('email')
-          ? this.neighborGroup.get('email').value
-          : '',
-        houseNumber: this.neighborGroup.get('houseNumber')
-          ? this.neighborGroup.get('houseNumber').value
-          : '',
-        street: this.neighborGroup.get('street')
-          ? this.neighborGroup.get('street').value
-          : ''
-      };
-
-      const neighborModel = new NeighborModel(neighbor);
-
-      console.log(neighborModel);
-
-      this.newRecord$.next({ paymentModel, neighborModel });
+      this.newRecord$.next(paymentModel);
     }
   }
 
+  public receivePaymentGroup($event) {
+    this.paymentGroup = $event;
+  }
+
+  get f() {
+    return this.paymentForm.controls;
+  }
   ngOnDestroy(): void {
     // Signal all streams to complete
     this.signal$.next();
@@ -472,3 +329,46 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
     this.clearSelectTableService.clearTable$.complete();
   }
 }
+
+/**
+ * 1. Recupero el pago con sus datos, y cuotas y contribuciones pagadas.
+ * 2. Permito la modificación del vecino que ha realizado el pago
+ * 3. Inicializo el formulario del vecino
+ * 4. Paso los datos del pago al formulario de pagos.
+ * 5. Inicializo el formulario
+ * 6. Recupero las mensualidades por pagar, así como las reparaciones que no han sido pagadas por el vecino
+ * 7. Establezco las reparaciones y las mensualidades que ha pagado el vecino como marcadas
+ *
+ * Casos posibles que se pueden presentar durante la modificación de un pago:
+ *
+ * 0. Si ya existe un pago posterior al que se intenta modificar, entonces no permitir la modificación.
+ *
+ * 1. El usuario desea establecer una reparación como no pagada (Ya que se equivocó previamente)
+ *  Solución. Permitir la desvinculación del pago con la reparación. Si el vecino desea pagar la reparación despues,
+ *  entonces tendrá que pagarla de acuerdo al costo actual por vecino.
+ *
+ * 2. El usuario desea establecer una mensualidad como no pagada (Ya que se equivocó previamente)
+ *  Solución. Permitir la desvinculación de la mensualidad con el pago. Si el vecino desea pagar la mensualidad despues,
+ *  entonces tendrá que pagarla de acuerdo al costo actual de la mensualidad.
+ *
+ * 3. Si el nuevo monto del pago es menor que el debito no permitir actualizar
+ *
+ * 4. Validar las cuotas o contribuciones que se estan incluyendo
+ *
+ *  4.1. Las mensualidades que ya estaban agregadas no seran cobradas nuevamente
+ *  4.2. Si hay nuevas mensualidades, entonces cobrar de acuerdo al costo actual de la mensualidad
+ *
+ *  4.3. Las reparaciones que ya estaban agregadas no serán cobradas.
+ *  4.4. Si hay nuevas reparaciones, entonces cobrar de acuerdo al costo actual de la reparación.
+ *
+ * Procedimiento de actualización
+ * 1. Valido que existan los id's de las cuotas y contribuciones del pago actualizado.
+ * 2. Valido que vecino no haya pagado las cuotas (Mensualidades y reparaciones) en un pago anterior. (Delegado a la base de datos)
+ * 2. Recupero el pago antiguo
+ * 3. Obtengo las mensualidades agregadas y las removidas
+ * 4. Obtengo las reparaciones agregadas y las removidas
+ * 5. Obtengo el debito
+ *  5.1. Para las mensualidades
+ *    5.1.1. Multiplicar el costo actual de la mensualidad por el número de mensualidades agregadas.
+ *    5.1.2. Sumar el s.
+ */

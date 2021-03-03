@@ -112,7 +112,7 @@
             <th mat-header-cell *matHeaderCellDef> Opciones </th>
             <td mat-cell *matCellDef="let element">
                 <a 
-                    [routerLink]="['pagos', 'editar', 'element.id']"
+                    [routerLink]="[element.id, 'editar']"
                     routerLinkActive="list-item-active"
                 >
                     <fa-icon [icon]="['fas', 'edit']"></fa-icon>

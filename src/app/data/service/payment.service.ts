@@ -65,4 +65,32 @@ export class PaymentService {
       )
     );
   }
+
+  editPayment(paymentID: string = '-1'): Observable<any> {
+    return from(this.ipc.invoke('edit-payment', paymentID)).pipe(
+      map(res => {
+        if (res.status === 0) {
+          throw new Error(res.message);
+        }
+
+        return res.data;
+      })
+    );
+  }
+
+  updatePayment(data: Observable<any>): Observable<any> {
+    return data.pipe(
+      switchMap(req =>
+        from(this.ipc.invoke('update-payment', ...Object.values(req))).pipe(
+          map(res => {
+            if (res.status === 0) {
+              throw new Error(res.message);
+            }
+            console.log(res);
+            return res;
+          })
+        )
+      )
+    );
+  }
 }

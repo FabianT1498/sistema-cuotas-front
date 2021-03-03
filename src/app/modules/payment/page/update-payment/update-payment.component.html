@@ -1,0 +1,122 @@
+<fieldset [disabled]="isLoading">
+	<form (ngSubmit)="updatePayment()" [formGroup]="paymentForm">
+		
+		<mat-horizontal-stepper formArrayName="paymentFormArr" linear (selectionChange)="receiveStep($event)">
+
+			<ng-container *ngIf="paymentForm">
+				<mat-step 
+					formGroupName="0" 
+					[stepControl]="f['paymentFormArr'].get([0])" 
+					label="Vecino"
+				>		
+					<input type="hidden" formControlName="neighborID">	
+					<div class="flex-container">
+						<div class="item-flex">
+							<mat-form-field>
+								<input 
+									matInput 
+									[placeholder]="'Cedula del vecino'" 
+									formControlName="neighborDNI"
+									required
+								>
+								<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['neighborDNI']"></app-control-messages>    
+							</mat-form-field>
+						</div>
+						<div class="item-flex"> {{ paymentData.neighbor.fullName }} </div>
+					</div>
+					
+					<div>
+						<button mat-button matStepperNext type="button" [disabled]="neighborGroup.invalid">Siguiente</button>
+					</div>
+
+				</mat-step>
+
+				<mat-step 
+					formGroupName="1" 
+					[stepControl]="f['paymentFormArr'].get([1])" 
+					label="Datos del Pago"
+				>
+					<app-payment-form
+						[payment]="paymentData.payment"
+						[paymentGroup]="paymentGroup"
+					>
+					</app-payment-form>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+
+				<mat-step 
+					[optional]="true"
+					label="Mensualidades"
+				>
+					<app-monthly-payments-select
+						[monthlyPayments]="monthlyPayments$| async"
+						[selectedMonthlyPayments]="paymentData.payment.monthlyPayments"
+						(totalCost)="receiveMonthlyPaymentsTotalCost($event)"
+						(monthlyPaymentCostEv)="receiveMonthlyPaymentCost($event)"
+						(selected)="receiveMonthlyPaymentsSelected($event)"
+					>
+					</app-monthly-payments-select>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+
+				<mat-step 
+					[optional]="true"
+					label="Reparaciones"
+				>
+					<app-repairs-select
+						[repairs]="repairs$| async"
+						[selectedRepairs]="paymentData.payment.repairs"
+						(totalCost)="receiveRepairsTotalCost($event)"
+						(selected)="receiveRepairsSelected($event)"
+					>
+					</app-repairs-select>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+				 
+
+				<mat-step [optional]="true" label="Contribuciones">
+					<app-contributions-select
+						[contributions]="contributions$ | async"
+						[contributedContributions]="paymentData.payment.contributions"
+						(totalAmount)="receiveContributionsTotalAmount($event)"
+						(selected)="receiveContributionsSelected($event)"
+					>
+					</app-contributions-select>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="button">Siguiente</button>
+					</div>
+				</mat-step>
+
+				<mat-step label="Completar">
+					<app-payment-summary-table
+						[items]="summaryItems"
+						[paymentInput]="paymentGroup.get('amount') ? paymentGroup.get('amount').value : 0"
+						(remainingAmount)="receiveRemainingAmount($event)"
+					>
+					</app-payment-summary-table>
+					<div>
+						<button mat-button matStepperPrevious type="button">Atras</button>
+						<button mat-button matStepperNext type="submit" [disabled]="paymentForm.invalid">
+							<span [hidden]="isLoading">Completar</span>
+							<span [hidden]="!isLoading">
+								<fa-icon icon="asterisk" size="2x" [spin]="true"></fa-icon>
+							</span>
+						</button>
+					</div>
+				</mat-step>
+				
+			</ng-container>	
+		</mat-horizontal-stepper>
+	</form>
+<fieldset>
+	

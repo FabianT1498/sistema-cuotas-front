@@ -6,10 +6,10 @@
           <mat-icon>menu</mat-icon>
         </button>    
         <span routerLink="" class="branding spacer center d-none d-sm-inline d-md-none">
-          {{ 'Vecinos jardin de Europa' }}
+          {{ 'Sistema de gestión del conjunto res. Florida Garden II' }}
         </span>
         <span routerLink="" class="branding spacer d-none d-md-inline">
-          {{ 'Vecinos jardin de Europa' }}
+          {{ 'Sistema de gestión del conjunto res. Florida Garden II' }}
         </span>
         <span class="d-none d-md-inline">
           
@@ -18,13 +18,8 @@
             {{ item.title }}
           </button>
 
-          <mat-slide-toggle [checked]="isDarkTheme$ | async" (change)="toggleTheme($event.checked)">Toggle Theme</mat-slide-toggle>
+          <mat-slide-toggle [checked]="isDarkTheme$ | async" (change)="toggleTheme($event.checked)">Cambiar tema</mat-slide-toggle>
         </span>
-        <div style="float: right;">
-          <a [href]="repoUrl" target="_blank">Fork on GitHub
-            <fa-icon [icon]="['fab','github']"></fa-icon>
-          </a>
-        </div>
       </div>
     </mat-toolbar>
   </div>

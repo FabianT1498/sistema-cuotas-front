@@ -94,6 +94,16 @@ ipcMain.handle('get-payments', async (event, ...args) => {
   return result;
 });
 
+ipcMain.handle('edit-payment', async (event, ...args) => {
+  const result = await paymentController.edit(...args);
+  return result;
+});
+
+ipcMain.handle('update-payment', async (event, ...args) => {
+  const result = await paymentController.update(...args);
+  return result;
+});
+
 /** Monthly Payments events */
 ipcMain.handle('get-unpaid-monthly-payments', async (event, ...args) => {
   const result = await monthlyPaymentController.getUnpaidMonthlyPayments(
