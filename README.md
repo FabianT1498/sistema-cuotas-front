@@ -26,6 +26,7 @@ sqlite3 | 5.0.1
 sequelize | 6.4.0
 
 <h3><b>Angular skills used</b></h3>
+
 * Lazy loading of modules
 * Dynamic forms
 * Reacting programming
