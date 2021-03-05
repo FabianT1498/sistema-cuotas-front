@@ -5,8 +5,9 @@ import { NeighborService } from '@data/service/neightbor.service';
 
 /** SCHEMAS */
 import { Neighbor, NeighborModel } from '@data/schema/neighbor';
-import { take } from 'rxjs/operators';
+import { catchError, finalize, take } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-create-neighbor',
@@ -38,20 +39,30 @@ export class CreateNeighborComponent implements OnInit {
 
   createNeighbor() {
     if (!this.formValuesValid) {
-      console.log('El vecino no puede ser procesado porque es null');
+      console.log(
+        'El vecino no puede ser procesado porque no ha proporcionado los datos correctamente'
+      );
     } else {
       this.isLoading = true;
 
       const neighborModel = new NeighborModel(this.formValuesValid);
-      console.log(neighborModel);
 
       this.neighborService
         .createNeighbor(neighborModel)
-        .pipe(take(1))
+        .pipe(
+          take(1),
+          catchError(err => {
+            console.log(err.message);
+            return of(err);
+          }),
+          finalize(() => (this.isLoading = false))
+        )
         .subscribe(res => {
           console.log(res);
-          this.isLoading = false;
-          this.router.navigate(['/vecinos']);
+
+          if (res.status === 1) {
+            this.router.navigate(['/vecinos']);
+          }
         });
     }
   }

@@ -66,7 +66,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
     false
   );
 
-  private signal$ = new Subject<any>();
+  private signal$ = new Subject();
 
   constructor(
     private paymentService: PaymentService,
@@ -127,7 +127,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
       paymentStartDate: '',
       paymentEndDate: '',
       paymentMethod: 'Todos',
-      paymentBank: '-1',
+      paymentBank: -1,
       referenceNumber: ''
     });
   }
@@ -187,7 +187,7 @@ export class PaymentComponent implements OnInit, AfterViewInit, OnDestroy {
       .get('paymentBank')
       .valueChanges.pipe(distinctUntilChanged(), takeUntil(this.signal$));
 
-    paymentBank$.subscribe((res: string) => {
+    paymentBank$.subscribe((res: number) => {
       this.paymentSearch.searchCriterias.paymentBank = res;
     });
 

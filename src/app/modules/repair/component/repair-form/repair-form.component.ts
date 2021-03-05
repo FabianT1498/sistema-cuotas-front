@@ -6,11 +6,8 @@ import {
   Output,
   ViewEncapsulation
 } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-
-import { Subject } from 'rxjs';
 
 /** SCHEMAS */
 import { Repair } from '@data/schema/repair';

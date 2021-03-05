@@ -56,7 +56,7 @@ export class PaymentService {
         from(this.ipc.invoke('create-payment', ...Object.values(req))).pipe(
           map(res => {
             if (res.status === 0) {
-              throw new Error(res.message);
+              throw res;
             }
             console.log(res);
             return res;
@@ -73,18 +73,20 @@ export class PaymentService {
           throw new Error(res.message);
         }
 
+        console.log(res);
+
         return res.data;
       })
     );
   }
 
-  updatePayment(data: Observable<any>): Observable<any> {
+  updatePayment(data: Observable<PaymentModel>): Observable<any> {
     return data.pipe(
       switchMap(req =>
-        from(this.ipc.invoke('update-payment', ...Object.values(req))).pipe(
+        from(this.ipc.invoke('update-payment', req)).pipe(
           map(res => {
             if (res.status === 0) {
-              throw new Error(res.message);
+              throw res;
             }
             console.log(res);
             return res;

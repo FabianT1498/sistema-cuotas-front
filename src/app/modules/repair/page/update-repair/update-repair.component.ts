@@ -5,8 +5,9 @@ import { RepairService } from '@data/service/repair.service';
 
 /** SCHEMAS */
 import { Repair, RepairModel } from '@data/schema/repair';
-import { take, tap } from 'rxjs/operators';
+import { catchError, finalize, take, tap } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-update-repair',
@@ -55,11 +56,20 @@ export class UpdateRepairComponent implements OnInit {
 
       this.repairService
         .updateRepair(repairModel)
-        .pipe(take(1))
+        .pipe(
+          take(1),
+          catchError(err => {
+            console.log(err.message);
+            return of(err);
+          }),
+          finalize(() => (this.isLoading = false))
+        )
         .subscribe(res => {
           console.log(res);
-          this.isLoading = false;
-          this.router.navigate(['/reparaciones']);
+
+          if (res.status === 1) {
+            this.router.navigate(['/reparaciones']);
+          }
         });
     }
   }

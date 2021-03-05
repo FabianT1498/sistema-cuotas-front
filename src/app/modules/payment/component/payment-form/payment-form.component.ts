@@ -1,10 +1,8 @@
 import {
   Component,
-  EventEmitter,
   Input,
   OnDestroy,
   OnInit,
-  Output,
   ViewEncapsulation
 } from '@angular/core';
 
@@ -37,7 +35,7 @@ export class PaymentFormComponent implements OnInit, OnDestroy {
   @Input()
   paymentGroup: FormGroup;
 
-  private signal$: Subject<any>;
+  private signal$ = new Subject();
 
   @Input()
   public payment?: Payment;

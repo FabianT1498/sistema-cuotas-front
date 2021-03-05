@@ -2,8 +2,6 @@ export {};
 
 const { Sequelize, QueryTypes } = require('sequelize');
 
-var moment = require('moment');
-
 const models = require('../database/models/index');
 
 const paginate = require('../helpers/paginate');
@@ -30,7 +28,7 @@ const sequelize = models.sequelize;
 const response = {
   status: 1,
   message: '',
-  data: {}
+  data: null
 };
 
 async function monthlyPaymentsExists(
@@ -99,11 +97,11 @@ async function getPaymentsCount() {
   try {
     const result = await Payment.count();
     console.log(result);
-    return { status: '1', message: 'Total de pagos', data: result };
+    return { status: 1, message: 'Total de pagos', data: result };
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message: 'Ha ocurrido un error',
       data: error
     };
@@ -221,7 +219,7 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
     console.log(result);
 
     return {
-      status: '1',
+      status: 1,
       message: 'Pagos encontrados',
       data: result.map(el => {
         return {
@@ -245,9 +243,9 @@ async function getPayments(neighborID, searchCriterias, searchOptions) {
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message: 'Ha ocurrido un error durante la recuperación de los pagos',
-      data: error
+      data: null
     };
   }
 }
@@ -264,9 +262,13 @@ async function create(_payment, _neighbor) {
         total_contributions_items ===
       0
     ) {
+      response.status = 0;
       response.message = 'No ha seleccionado elementos por pagar o contribuir';
+      response.data = null;
       return response;
     }
+
+    let does_exist_ids = true;
 
     // 1. Verificar que existan las mensualidades
     /* const all_monthly_payments_exists = await monthlyPaymentsExists(
@@ -278,16 +280,16 @@ async function create(_payment, _neighbor) {
       total_monthly_payments_items > 0 &&
       !(await monthlyPaymentsExists(_payment.monthlyPayments))
     ) {
+      does_exist_ids = false;
       response.message = 'Hay mensualidades que no existen';
-      return response;
     }
 
     // 2. Verificar que existan las reparaciones
     /* const all_repairs_exists = await repairsExists(_payment.repairs); */
 
     if (total_repairs_items > 0 && !(await repairsExists(_payment.repairs))) {
+      does_exist_ids = false;
       response.message = 'Hay reparaciones que no existen';
-      return response;
     }
 
     // 3. Verificar que existan las contribuciones
@@ -299,16 +301,22 @@ async function create(_payment, _neighbor) {
       total_contributions_items > 0 &&
       !(await contributionsExists(_payment.contributions))
     ) {
+      does_exist_ids = false;
       response.message = 'Hay contribuciones que no existen';
+    }
+
+    if (!does_exist_ids) {
+      response.data = null;
+      response.status = 0;
       return response;
     }
 
     let neighbor = null;
 
-    if (_neighbor['neighborID'] === -1) {
+    if (_neighbor['id'] === -1) {
       await House.create({
         house_no: _neighbor.houseNumber,
-        street: 'Calle finlandia' // HARD CODE
+        street: _neighbor.street
       });
 
       neighbor = await Neighbor.create({
@@ -320,7 +328,7 @@ async function create(_payment, _neighbor) {
       });
     } else {
       neighbor = await Neighbor.findOne({
-        where: { id: _neighbor['neighborID'] }
+        where: { id: _neighbor['id'] }
       });
     }
 
@@ -379,14 +387,14 @@ async function create(_payment, _neighbor) {
       let remainder = 0;
 
       // 4.4. Obtener el remanente del vecino
-      if (_neighbor['neighborID'] !== -1) {
+      if (_neighbor['id'] !== -1) {
         const query = `
           SELECT SUM(Payments.amount - (SELECT COALESCE(SUM(Monthly_Payments_Record.amount), 0) FROM Monthly_Payments_Record
               WHERE Monthly_Payments_Record.payment_id = Payments.id) - (SELECT COALESCE(SUM(Repairs_Payments.amount), 0)
                   FROM Repairs_Payments WHERE Repairs_Payments.payment_id = Payments.id) 
                       - (SELECT COALESCE(SUM(Contributions_Payments.amount), 0) FROM Contributions_Payments 
                           WHERE Contributions_Payments.payment_id = Payments.id)) AS remainder
-                              FROM Payments WHERE neighbor_id=${_neighbor['neighborID']}
+                              FROM Payments WHERE neighbor_id=${_neighbor['id']}
           `;
 
         const result = await sequelize.query(query, {
@@ -405,6 +413,8 @@ async function create(_payment, _neighbor) {
 
       if (remaining_balance < 0) {
         response.message = 'El debito supera al credito';
+        response.data = null;
+        response.status = 0;
         return response;
       }
 
@@ -432,9 +442,9 @@ async function create(_payment, _neighbor) {
           if (!electronicPayment) {
             await Payment.destroy({ where: { id: payment.dataValues.id } });
             return {
-              status: '0',
+              status: 0,
               message: 'El registro del pago electronico ha fallado',
-              data: {}
+              data: null
             };
           }
         }
@@ -473,36 +483,36 @@ async function create(_payment, _neighbor) {
         }
 
         return {
-          status: '1',
+          status: 1,
           message: 'Pago registrado con exito',
           data: payment.dataValues
         };
       } else {
         console.log('Registro de pago fallido');
         return {
-          status: '0',
+          status: 0,
           message: 'El registro del pago ha fallado',
-          data: {}
+          data: null
         };
       }
     } else {
-      return { status: '0', message: 'Este vecino no existe', data: {} };
+      return { status: 0, message: 'Este vecino no existe', data: null };
     }
   } catch (error) {
     console.error(error);
     return {
-      status: '0',
+      status: 0,
       message: 'ha ocurrido un error durante el registro en la base de datos',
-      data: error
+      data: null
     };
   }
 }
 
 async function getPayment(paymentID = -1) {
   try {
-    response.data = null;
-
     if (paymentID === -1) {
+      response.data = null;
+      response.status = 0;
       response.message = 'Por favor, envíe un ID valido';
       return response;
     }
@@ -528,6 +538,7 @@ async function getPayment(paymentID = -1) {
     const monthly_payment_record_join = {
       model: Monthly_Payment_Record,
       attributes: ['monthly_payment_date', 'amount'],
+      required: false,
       include: [
         {
           model: Monthly_Payment_Year_Month,
@@ -535,10 +546,9 @@ async function getPayment(paymentID = -1) {
             ['monthly_payment_month', 'month'],
             ['monthly_payment_year', 'year']
           ],
-          required: true
+          required: false
         }
-      ],
-      required: false
+      ]
     };
 
     const repair_join = {
@@ -562,15 +572,15 @@ async function getPayment(paymentID = -1) {
         contribution_join
       ],
       where: {
-        id: {
-          [Op.eq]: paymentID
-        }
+        id: paymentID
       }
     };
 
     const payment = await Payment.findOne(options);
 
     if (!payment) {
+      response.data = null;
+      response.status = 0;
       response.message = 'Este pago no existe';
     } else {
       response.data = {
@@ -630,7 +640,7 @@ async function getPayment(paymentID = -1) {
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message: 'Ha ocurrido un error durante la recuperación del pago',
       data: null
     };
@@ -647,7 +657,7 @@ async function edit(paymentID = -1) {
 
     // Válido que este sea el último pago realizado por el vecino
     if (response.data) {
-      const neighbor_last_payment = await Payment.findOne({
+      const last_payment = await Payment.findOne({
         order: [['id', 'DESC']],
         where: {
           neighbor_id: {
@@ -656,9 +666,9 @@ async function edit(paymentID = -1) {
         }
       });
 
-      if (neighbor_last_payment.id !== paymentID) {
+      if (last_payment.dataValues.id !== response.data.payment.id) {
         return {
-          status: 1,
+          status: 0,
           data: null,
           message: 'No puede modificar este pago, ya existen pagos posteriores'
         };
@@ -669,7 +679,7 @@ async function edit(paymentID = -1) {
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message: 'Ha ocurrido un error durante la recuperación del pago',
       data: null
     };
@@ -678,6 +688,14 @@ async function edit(paymentID = -1) {
 
 async function update(_payment) {
   try {
+    // 0. Recuperar los datos del pago antes de actualizar
+    const old_payment = await getPayment(_payment.id);
+
+    if (!old_payment.data) {
+      // Este pago no existe
+      return old_payment;
+    }
+
     const new_total_monthly_payments_items = _payment.monthlyPayments.length;
     const new_total_repairs_items = _payment.repairs.length;
     const new_total_contributions_items = _payment.contributions.length;
@@ -721,9 +739,6 @@ async function update(_payment) {
       return response;
     }
 
-    // 4. Recuperar los datos del pago antes de actualizar
-    const old_payment = await getPayment(_payment.id);
-
     let debit = 0;
     let credit = 0;
 
@@ -732,7 +747,7 @@ async function update(_payment) {
     let added_monthly_payments = [];
 
     const monthly_payments_dates = _payment.monthlyPayments
-      .map(el => el.id)
+      .map(el => `'${el.id}'`)
       .join();
 
     // 5.2. Obtener las mensualidades que fueron agregadas
@@ -884,7 +899,7 @@ async function update(_payment) {
     ) {
       // 7.3. Filtras las cotribuciones que se mantuvieron
       let query = `
-        SELECT Contributions_Payments.* FROM Contributions INNER JOIN Contributions_Payments ON 
+        SELECT Contributions.* FROM Contributions INNER JOIN Contributions_Payments ON 
             (Contributions_Payments.contribution_id = Contributions.id AND Contributions_Payments.payment_id = ${_payment.id})
                 WHERE Contributions.id IN (${contributions_ids})
       `;
@@ -923,18 +938,18 @@ async function update(_payment) {
     const remaining_balance = credit - debit;
 
     if (remaining_balance < 0) {
-      response.status = 1;
+      response.status = 0;
       response.message = 'El debito supera al credito';
-      response.data = {};
+      response.data = null;
       return response;
     }
 
     // 10. Actualizar el pago
 
     //10.1. Verificar si cambió el metodo de pago
-    if (_payment.paymentMethod !== old_payment.data.payment.payment_method) {
+    if (_payment.paymentMethod !== old_payment.data.payment.paymentMethod) {
       if (
-        old_payment.data.payment.payment_method === 'Efectivo' &&
+        old_payment.data.payment.paymentMethod === 'Efectivo' &&
         _payment.paymentMethod !== 'Efectivo'
       ) {
         let electronic_payment = await Electronic_Payment.create({
@@ -945,26 +960,24 @@ async function update(_payment) {
 
         if (!electronic_payment) {
           return {
-            status: 1,
+            status: 0,
             message: 'No se ha podido actualizar el pago',
             data: null
           };
         }
       } else if (
-        old_payment.data.payment.payment_method !== 'Efectivo' &&
+        old_payment.data.payment.paymentMethod !== 'Efectivo' &&
         _payment.paymentMethod === 'Efectivo'
       ) {
         const no_affected_rows = await Electronic_Payment.destroy({
           where: {
-            payment_id: {
-              [Op.eq]: _payment.id
-            }
+            payment_id: _payment.id
           }
         });
 
         if (no_affected_rows === 0) {
           return {
-            status: 1,
+            status: 0,
             message: 'No se ha podido actualizar el pago',
             data: null
           };
@@ -974,29 +987,27 @@ async function update(_payment) {
 
     // 10.2. Verificar si permanece el pago electronico
     if (
-      old_payment.data.payment.payment_method !== 'Efectivo' &&
+      old_payment.data.payment.paymentMethod !== 'Efectivo' &&
       _payment.paymentMethod !== 'Efectivo'
     ) {
       const e_payment_attributes = {
         bank_id: _payment['bank'] ? _payment['bank'] : null,
         reference_number: _payment['referenceNumber']
           ? _payment['referenceNumber']
-          : ''
+          : null
       };
 
       const affected_rows = await Electronic_Payment.update(
         e_payment_attributes,
         {
           where: {
-            payment_id: {
-              [Op.eq]: [_payment.id]
-            }
+            payment_id: _payment.id
           }
         }
       );
 
       if (affected_rows[0] === 0) {
-        response.status = 1;
+        response.status = 0;
         response.message = 'No se ha podido actualizar el registro';
         response.data = null;
         return response;
@@ -1072,12 +1083,19 @@ async function update(_payment) {
             .amount
         })
     );
+
+    response.status = 1;
+    response.message =
+      'El pago y sus registros asociados han sido actualizados';
+    response.data = _payment;
+
+    return response;
   } catch (error) {
     console.error(error);
     return {
-      status: '0',
+      status: 0,
       message: 'ha ocurrido un error durante el registro en la base de datos',
-      data: error
+      data: null
     };
   }
 }
@@ -1090,51 +1108,3 @@ module.exports = {
   getPayment,
   update
 };
-
-/* // Esta consulta me devuelve las nuevas mensualidades que fueron agregadas
-SELECT Monthly_Payments_Years_Months.* from Monthly_Payments_Years_Months LEFT JOIN Monthly_Payments_Record 
-  ON (Monthly_Payments_Record.monthly_payment_date = Monthly_Payments_Years_Months.monthly_payment_date
-    AND Monthly_Payments_Record.payment_id=3)
-      WHERE Monthly_Payments_Record.monthly_payment_date IS NULL 
-          AND Monthly_Payments_Years_Months.monthly_payment_date IN ('2021-03-01', '2021-04-01');
-
-// Obtener las mensualidades que fueron retiradas del pago.
-SELECT Monthly_Payments_Record.monthly_payment_date from Monthly_Payments_Record LEFT JOIN Monthly_Payments_Years_Months 
-  ON (Monthly_Payments_Record.monthly_payment_date = Monthly_Payments_Years_Months.monthly_payment_date
-    AND Monthly_Payments_Years_Months.monthly_payment_date IN ('2021-03-01', '2021-05-01'))
-      WHERE Monthly_Payments_Record.payment_id=3 AND Monthly_Payments_Years_Months.monthly_payment_date IS NULL; */
-
-/* 
-  // Esta consulta me devuelve las nuevas reparaciones que fueron agregadas junto a su costo
-  SELECT Repairs.id, (Repairs.cost - COALESCE(SUM(Repairs_Payments.amount), 0)) 
-      / ((SELECT COUNT(Neighbors.id) FROM Neighbors) - COUNT(Repairs_Payments.repair_id)) AS cost_by_neighbor
-          FROM Repairs LEFT JOIN Repairs_Payments ON (Repairs_Payments.repair_id = Repairs.id AND Repairs_Payments.payment_id=3)
-              WHERE Repairs_Payments.repair_id IS NULL 
-                  AND Repairs.id IN (2, 3, 4) GROUP BY (Repairs.id) ORDER BY Repairs.id ASC
-  
-  // Obtener las reparaciones que fueron retiradas del pago.
-  SELECT Repairs_Payments.* from Repairs_Payments LEFT JOIN Repairs 
-    ON (Repairs_Payments.repair_id = Repairs.id
-      AND Repairs.id IN (2, 3, 4))
-        WHERE Repairs_Payments.payment_id=3 AND Repairs.id IS NULL;
-*/
-
-/**
-  
- // Esta consulta me devuelve las nuevas contribuciones que fueron agregadas (Para agregar la cantidad contribuida)
-  SELECT Contributions.id FROM Contributions LEFT JOIN Contributions_Payments ON 
-      (Contributions_Payments.contribution_id = Contributions.id AND Contributions_Payments.payment_id=3)
-              WHERE Contributions_Payments.contribution_id IS NULL 
-                  AND Contributions.id IN (2, 3, 4);
-
-  // Obtener las contribuciones que se mantienen en el pago (Para actualizar la cantidad contribuida)
-  SELECT Contributions.id FROM Contributions INNER JOIN Contributions_Payments ON 
-      (Contributions_Payments.contribution_id = Contributions.id AND Contributions_Payments.payment_id=3)
-              WHERE Contributions.id IN (2, 3, 4);
-  
-  // Obtener las contribuciones que fueron retiradas del pago. (Para liberar la cantidad contribuida)
-  SELECT Contributions_Payments.* from Contributions_Payments LEFT JOIN Contributions 
-    ON (Contributions_Payments.contribution_id = Contributions.id
-      AND Contributions.id IN (1))
-        WHERE Contributions_Payments.payment_id=3 AND Contributions.id IS NULL;
- */

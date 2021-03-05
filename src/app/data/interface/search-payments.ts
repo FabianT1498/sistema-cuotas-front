@@ -5,7 +5,7 @@ export interface PaymentsSearchCriterias {
   paymentStartDate: string | null;
   paymentEndDate: string | null;
   paymentMethod: string;
-  paymentBank: string;
+  paymentBank: number;
   referenceNumber: string;
 }
 

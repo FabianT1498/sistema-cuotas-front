@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-
 
 import { MyModalComponent } from '../modal/my-modal.component';
 
@@ -11,10 +9,7 @@ import { MyModalComponent } from '../modal/my-modal.component';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit {
-  
-  constructor(
-    private modalService: NgbModal,
-  ) {}
+  constructor(private modalService: NgbModal) {}
 
   ngOnInit(): void {}
 

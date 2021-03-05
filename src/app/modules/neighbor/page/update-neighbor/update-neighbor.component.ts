@@ -7,7 +7,7 @@ import { NeighborService } from '@data/service/neightbor.service';
 import { Neighbor, NeighborModel } from '@data/schema/neighbor';
 import { catchError, finalize, take } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-update-neighbor',

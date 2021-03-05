@@ -22,8 +22,8 @@ import { MatSort } from '@angular/material/sort';
 /** Services */
 import { ClearSelectTableService } from '@shared/service/clear-select-table.service';
 import { DataService } from '@app/service/data.service';
-import { Observable, Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { MonthlyPaymentService } from '@data/service/monthly-payment.service';
 
 @Component({

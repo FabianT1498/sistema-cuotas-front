@@ -21,12 +21,10 @@ import {
   debounceTime,
   finalize,
   map,
-  startWith,
   take,
-  takeUntil,
-  tap
+  takeUntil
 } from 'rxjs/operators';
-import { Observable, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 
 /** SERVICES */
 import { DataService } from '@app/service/data.service';
@@ -184,7 +182,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
 
         if (res.data) {
           const neighbor = res.data;
-          this.neighborGroup.controls['neighborID'].setValue(neighbor.id);
+          this.neighborGroup.controls['id'].setValue(neighbor.id);
           this.neighborID$.next(neighbor.id);
           this.neighborFullName = neighbor.fullname;
           this.removeNeighborControls();
@@ -194,7 +192,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
           view = this.neighborNotFoundComp.createEmbeddedView(null);
           this.addNeighborControls();
           this.neighborID$.next(-1);
-          this.neighborGroup.controls['neighborID'].setValue(-1);
+          this.neighborGroup.controls['id'].setValue(-1);
         }
 
         this.clearSelectTableService.clearTable(true);
@@ -214,15 +212,18 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       .createPayment(this.newRecord$)
       .pipe(
         takeUntil(this.signal$),
-        tap(record => this.router.navigate(['/pagos'])),
-        finalize(() => (this.isLoading = false)),
-        catchError(error => {
-          console.log('Caught in CatchError. Throwing error');
-          return throwError(error);
-        })
+        catchError(err => {
+          console.log(err.message);
+          return of(err);
+        }),
+        finalize(() => (this.isLoading = false))
       )
       .subscribe(res => {
         console.log(res);
+
+        if (res.status === 1) {
+          this.router.navigate(['/pagos']);
+        }
       });
   }
 
@@ -237,7 +238,7 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
           Validators.maxLength(10)
         ]
       ],
-      neighborID: [-1, [Validators.required]]
+      id: [-1, [Validators.required]]
     });
   }
 
@@ -441,10 +442,9 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       };
 
       const paymentModel = new PaymentModel(payment);
-      console.log(paymentModel);
 
       const neighbor: Neighbor = {
-        id: this.neighborGroup.get('neighborID').value,
+        id: this.neighborGroup.get('id').value,
         dni: this.neighborGroup.get('neighborDNI').value,
         fullName: this.neighborGroup.get('fullName')
           ? this.neighborGroup.get('fullName').value
@@ -464,8 +464,6 @@ export class CreatePaymentComponent implements OnInit, OnDestroy {
       };
 
       const neighborModel = new NeighborModel(neighbor);
-
-      console.log(neighborModel);
 
       this.newRecord$.next({ paymentModel, neighborModel });
     }

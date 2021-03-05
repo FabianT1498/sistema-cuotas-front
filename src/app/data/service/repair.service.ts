@@ -55,9 +55,9 @@ export class RepairService {
     return from(this.ipc.invoke('create-repair', repair)).pipe(
       map(res => {
         if (res.status === 0) {
-          throw new Error(res.message);
+          throw res;
         }
-
+        console.log(res);
         return res;
       })
     );
@@ -67,9 +67,10 @@ export class RepairService {
     return from(this.ipc.invoke('update-repair', repair)).pipe(
       map(res => {
         if (res.status === 0) {
-          throw new Error(res.message);
+          throw res;
         }
 
+        console.log(res);
         return res;
       })
     );

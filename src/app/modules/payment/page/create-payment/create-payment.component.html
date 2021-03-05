@@ -20,7 +20,7 @@
 								>
 								<app-control-messages [control]="f['paymentFormArr'].get([0]).controls['neighborDNI']"></app-control-messages>    
 							</mat-form-field>
-							<input type="hidden" formControlName="neighborID">
+							<input type="hidden" formControlName="id">
 						</div>
 						
 						<ng-container #neighborContainer></ng-container>
@@ -170,7 +170,7 @@
 					<app-monthly-payments-select
 						[monthlyPayments]="monthlyPayments$| async"
 						(totalCost)="receiveMonthlyPaymentsTotalCost($event)"
-						(monthlyPaymentCostEvent)="receiveMonthlyPaymentCost($event)"
+						(monthlyPaymentCostEv)="receiveMonthlyPaymentCost($event)"
 						(selected)="receiveMonthlyPaymentsSelected($event)"
 					>
 					</app-monthly-payments-select>

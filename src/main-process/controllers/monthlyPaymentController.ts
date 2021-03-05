@@ -4,10 +4,8 @@ const { Sequelize } = require('sequelize');
 const models = require('../database/models/index');
 const formatDateISO = require('./../helpers/format_date_ISO.ts');
 
-const Monthly_Payments_Record = models.Monthly_Payments_Record;
 const Monthly_Payment_Year_Month = models.Monthly_Payment_Year_Month;
 const Monthly_Payment_Cost = models.Monthly_Payment_Cost;
-const Payment = models.Payment;
 const sequelize = models.sequelize;
 
 const Neighbor = models.Neighbor;
@@ -16,24 +14,17 @@ const Op = Sequelize.Op;
 const response = {
   status: 1,
   message: '',
-  data: {}
+  data: null
 };
 
-/**
- * 1. Obtener el vecino de acuerdo a su ID
- * 2. Recuperar la columna created_at
- * 3. Recuperar las mensualidades desde el mes y año en el que fue creado el vecino (Nota: Una persona es considerada vecino de la residencia
- *  desde el momento en el que se le atribuye el primer pago de mensualidad, por lo tanto, al momento de migrar los vecinos desde la hoja
- *  de calculo hacia la aplicación se debe obtener la primera mensualidad que se le fue atribuida, y se debe cambiar la columna created_at a
- *  la fecha de la primera mensualidad atribuida)
- * 4. Hacer una diferencia entre los meses pagados y los meses por pagar.
- */
 async function getUnpaidMonthlyPayments(neighborID = null) {
   try {
     response.data = [];
 
     if (!neighborID) {
       response.message = 'No ha sido enviado el ID del vecino';
+      response.status = 0;
+      response.data = null;
       return response;
     }
 
@@ -111,6 +102,7 @@ async function getUnpaidMonthlyPayments(neighborID = null) {
       };
     });
 
+    response.status = 1;
     response.message =
       monthly_payments_years_months.length > 0
         ? 'Mensualidades por pagar encontradas'
@@ -122,6 +114,7 @@ async function getUnpaidMonthlyPayments(neighborID = null) {
     console.log(error);
     response.status = 0;
     response.message = 'Ocurrio un error al procesar las mensualidades';
+    response.data = null;
     return response;
   }
 }
@@ -132,147 +125,18 @@ async function getMonthlyPaymentCost() {
   });
 
   if (monthly_payments_cost) {
+    response.status = 1;
     response.data = monthly_payments_cost.cost;
     response.message = 'Cost actual de la mensualidad';
     return response;
   }
 
+  response.status = 0;
   response.data = 0;
   response.message = 'No hay al menos un costo registrado para la mensualidad';
+
   return response;
 }
-
-/* async function create(_mensualidad) {
-  try {
-    const mensualidad = Mensualidades.build(_mensualidad);
-    result = await Mensualidades.create(_mensualidad);
-    if (result) {
-      console.log('Registro guardado con exito...');
-      console.log(result);
-    }
-    return result;
-  } catch (error) {
-    console.log(error);
-    return 0;
-  }
-}
-
-async function read() {
-  try {
-    const result = await Mensualidades.findAll();
-    if (result) {
-      console.log(result);
-    }
-    return result;
-  } catch (error) {
-    console.log(error);
-    return 0;
-  }
-}
-
-async function update(_mensualidad) {
-  try {
-    result = await Mensualidades.update(_mensualidad, {
-      where: { id_mensualidad: _mensualidad.id_mensualidad }
-    });
-    if (result) {
-      console.log('Registro actualizado con exito...');
-      console.log(result);
-    }
-    return result;
-  } catch (error) {
-    console.log(error);
-    return 0;
-  }
-}
-
-async function delete_(id_mensualidad) {
-  try {
-    const result = await Mensualidades.destroy({
-      where: {
-        id_mensualidad: id_mensualidad
-      }
-    });
-    if (result) {
-      console.log('Registro borrado con exito...');
-    }
-    return result;
-  } catch (error) {
-    console.log(error);
-    return 0;
-  }
-  console.log(_mensualidad);
-}
-
-async function Pagar(data) {
-  const pago = (result = await Pagos.findOne({
-    where: { id_pago: data['id_pago'] }
-  }));
-  const mensualidad = (result = await Mensualidades.findOne({
-    where: { id_mensualidad: data['id_mensualidad'] }
-  }));
-
-  if (pago === null) {
-    console.log('pago Not found!');
-    return 0;
-  } else if (mensualidad === null) {
-    console.log('mensualidad Not found!');
-    return 0;
-  } else {
-    result = pago.addMensualidades(mensualidad, {
-      through: { monto: data['monto'], parte: data['parte'] }
-    });
-    if (result) {
-      console.log('pago Exitoso');
-      return result;
-    } else {
-      console.log('Operacion fallida');
-      return 0;
-    }
-  }
-}
-
-async function findPagosByMensualidad(id_mensualidad) {
-  try {
-    const result = await Mensualidades.findOne({
-      where: { id_mensualidad: id_mensualidad },
-      include: Pagos
-    });
-    if (result) {
-      console.log(result);
-    }
-    return result;
-  } catch (error) {
-    console.log(error);
-    return 0;
-  }
-}
-
-async function findPagosByLider(id_lider) {
-  try {
-    const result = await Pagos.findOne({
-      where: { lideresHogarCedula: id_lider },
-      include: Mensualidades
-    });
-    if (result) {
-      console.log(result);
-    }
-    return result;
-  } catch (error) {
-    console.log(error);
-    return 0;
-  }
-}
-
-module.exports = {
-  create,
-  read,
-  update,
-  delete_,
-  Pagar,
-  findPagosByMensualidad,
-  findPagosByLider
-}; */
 
 module.exports = {
   getUnpaidMonthlyPayments,

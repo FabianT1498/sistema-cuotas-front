@@ -15,20 +15,20 @@ const Op = Sequelize.Op;
 const response = {
   status: 1,
   message: '',
-  data: {}
+  data: null
 };
 
 async function getRepairsCount() {
   try {
     const result = await Repair.count();
     console.log(result);
-    return { status: '1', message: 'Total de pagos', data: result };
+    return { status: 1, message: 'Total de pagos', data: result };
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message: 'Ha ocurrido un error',
-      data: error
+      data: null
     };
   }
 }
@@ -56,8 +56,11 @@ async function getRepair(repairID = -1) {
     console.log(repair);
 
     if (!repair) {
+      response.status = 0;
+      response.data = null;
       response.message = 'Esta reparación no existe';
     } else {
+      response.status = 1;
       response.data = {
         id: repair.id,
         issueDate: repair.issue_date,
@@ -72,10 +75,10 @@ async function getRepair(repairID = -1) {
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message:
         'Ha ocurrido un error durante la recuperación de las reparaciones',
-      data: error
+      data: null
     };
   }
 }
@@ -96,8 +99,11 @@ async function update(_repair) {
     const response = await getRepair(_repair.id);
 
     if (!response.data) {
+      response.data = null;
+      response.status = 0;
       response.message = 'Esta reparación no existe';
     } else if (response.data && response.data.remaining <= 0) {
+      response.status = 0;
       response.message = 'Esta reparación ya ha sido pagada en su totalidad';
       response.data = null;
     } else {
@@ -118,6 +124,7 @@ async function update(_repair) {
       );
 
       if (result[0] === 1) {
+        response.status = 1;
         response.message = 'Registro actualizado con exito';
         response.data = _repair;
       }
@@ -202,7 +209,7 @@ async function getRepairs(repairID, searchCriterias, searchOptions) {
     const repairs = await sequelize.query(query, { type: QueryTypes.SELECT });
 
     return {
-      status: '1',
+      status: 1,
       message: 'Reparaciones encontrados',
       data: repairs.map(el => {
         return {
@@ -217,10 +224,10 @@ async function getRepairs(repairID, searchCriterias, searchOptions) {
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message:
         'Ha ocurrido un error durante la recuperación de las reparaciones',
-      data: error
+      data: null
     };
   }
 }
@@ -285,6 +292,7 @@ async function getUnpaidRepairs(neighborID = null) {
       };
     });
 
+    response.status = 1;
     response.message =
       data.length > 0
         ? 'Reparaciones por pagar encontradas'
@@ -314,14 +322,14 @@ async function create(_repair) {
 
     if (repair) {
       return {
-        status: '1',
+        status: 1,
         message: 'Reparación registrada con exito',
         data: repair.dataValues
       };
     } else {
       console.log('Registro de reparación fallido');
       return {
-        status: '0',
+        status: 0,
         message: 'El registro del pago ha fallado',
         data: {}
       };
@@ -329,7 +337,7 @@ async function create(_repair) {
   } catch (error) {
     console.error(error);
     return {
-      status: '0',
+      status: 0,
       message: 'ha ocurrido un error durante el registro en la base de datos',
       data: error
     };

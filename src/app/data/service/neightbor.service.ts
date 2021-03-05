@@ -53,7 +53,7 @@ export class NeighborService {
     return from(this.ipc.invoke('create-neighbor', neighbor)).pipe(
       map(res => {
         if (res.status === 0) {
-          throw new Error(res.message);
+          throw res;
         }
 
         return res;

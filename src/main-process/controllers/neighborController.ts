@@ -1,3 +1,5 @@
+import { TYPED_NULL_EXPR } from '@angular/compiler/src/output/output_ast';
+
 export {};
 
 const models = require('../database/models/index');
@@ -12,7 +14,7 @@ const House = models.House;
 const response = {
   status: 1,
   message: '',
-  data: {}
+  data: null
 };
 
 const Op = Sequelize.Op;
@@ -21,13 +23,13 @@ async function getNeighborsCount() {
   try {
     const result = await Neighbor.count();
     console.log(result);
-    return { status: '1', message: 'Total de vecinos', data: result };
+    return { status: 1, message: 'Total de vecinos', data: result };
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message: 'Ha ocurrido un error',
-      data: error
+      data: null
     };
   }
 }
@@ -76,16 +78,16 @@ async function getNeighbors(neighborID, searchCriterias, searchOptions) {
     console.log(result);
 
     return {
-      status: '1',
+      status: 1,
       message: 'Vecinos encontrados',
       data: result.map(el => el.dataValues)
     };
   } catch (error) {
     console.log(error);
     return {
-      status: '0',
+      status: 0,
       message: 'Ha ocurrido un error durante la recuperación de los vecinos',
-      data: error
+      data: null
     };
   }
 }
@@ -112,17 +114,18 @@ async function findByDNI(dni) {
 
 async function findHouseByNumber(house_no) {
   try {
-    const house = House.findOne({
+    const house = await House.findOne({
       where: {
-        house_no: {
-          [Op.eq]: [house_no]
-        }
+        house_no: house_no
       }
     });
 
+    console.log(house);
+
     if (house) {
+      response.status = 1;
       response.message = 'Casa encontrada';
-      response.data = house;
+      response.data = house.dataValues;
     } else {
       response.message = 'Casa no encontrada';
       response.data = null;
@@ -140,10 +143,10 @@ async function findHouseByNumber(house_no) {
 
 async function getNeighbor(neighborID = -1) {
   try {
-    response.data = null;
-
     if (neighborID === -1) {
+      response.data = null;
       response.message = 'Por favor, envíe un ID valido';
+      response.status = 0;
       return response;
     }
 
@@ -157,8 +160,8 @@ async function getNeighbor(neighborID = -1) {
     });
 
     if (neighbor) {
+      response.status = 1;
       response.message = 'Vecino encontrado';
-      console.log(neighbor);
       response.data = {
         id: neighbor.id,
         fullName: neighbor.fullname,
@@ -169,7 +172,9 @@ async function getNeighbor(neighborID = -1) {
         street: neighbor.House ? neighbor.House.dataValues.street : ''
       };
     } else {
+      response.status = 0;
       response.message = 'Vecino no existe';
+      response.data = null;
     }
 
     return response;
@@ -178,7 +183,7 @@ async function getNeighbor(neighborID = -1) {
     response.status = 0;
     response.message =
       'Ha ocurrido un error durante la recuperación del vecino';
-    response.data = error;
+    response.data = null;
     return response;
   }
 }
@@ -190,35 +195,40 @@ async function edit(neighborID) {
   } catch (error) {
     console.log(error);
     response.status = 0;
-    response.data = error;
+    response.message = error;
+    response.data = null;
     return response;
   }
 }
 
 async function update(_neighbor) {
   try {
-    const response = await getNeighbor(_neighbor.id);
+    const neighbor_result = await getNeighbor(_neighbor.id);
 
-    if (!response.data) {
+    let house_result = null;
+
+    if (!neighbor_result.data) {
+      response.status = 0;
+      response.data = null;
       response.message = 'Este vecino no existe';
     } else {
-      const result_house = await findHouseByNumber(_neighbor.houseNumber);
+      house_result = await findHouseByNumber(_neighbor.houseNumber);
 
-      if (!result_house.data) {
-        House.create({
+      console.log(house_result);
+
+      if (!house_result.data) {
+        await House.create({
           house_no: _neighbor.houseNumber,
           street: _neighbor.street
         });
       } else {
-        House.update(
+        await House.update(
           {
             street: _neighbor.street
           },
           {
             where: {
-              house_no: {
-                [Op.eq]: [_neighbor.houseNumber]
-              }
+              house_no: house_result.data.house_no
             }
           }
         );
@@ -234,9 +244,7 @@ async function update(_neighbor) {
         },
         {
           where: {
-            id: {
-              [Op.eq]: [_neighbor.id]
-            }
+            id: _neighbor.id
           }
         }
       );
@@ -245,22 +253,26 @@ async function update(_neighbor) {
         response.status = 1;
         response.message = 'Registro actualizado con exito';
         response.data = _neighbor;
+      } else {
+        response.status = 0;
+        response.message = 'Ha ocurrido un problema al actualizar el vecino';
+        response.data = null;
       }
     }
 
     return response;
   } catch (error) {
     response.status = 0;
+    console.log(error);
 
     if (error instanceof UniqueConstraintError) {
-      console.log(error);
       response.message = 'Esta insertando un vecino cuya cedula ya existe';
     } else {
       response.message =
         'Ha ocurrido un error durante el registro en la base de datos';
     }
 
-    response.data = error;
+    response.data = null;
 
     return response;
   }
@@ -268,10 +280,10 @@ async function update(_neighbor) {
 
 async function create(_neighbor) {
   try {
-    const result = await findHouseByNumber(_neighbor.houseNumber);
+    const house_result = await findHouseByNumber(_neighbor.houseNumber);
 
-    if (!result.data) {
-      House.create({
+    if (!house_result.data) {
+      await House.create({
         house_no: _neighbor.houseNumber,
         street: _neighbor.street
       });
@@ -285,12 +297,14 @@ async function create(_neighbor) {
       house_no: _neighbor.houseNumber
     };
 
-    const neighbor = Neighbor.create(neighbor_attributes);
+    const neighbor = await Neighbor.create(neighbor_attributes);
 
     if (neighbor) {
+      response.status = 1;
       response.message = 'Vecino creado con exito';
       response.data = neighbor.dataValues;
     } else {
+      response.status = 0;
       response.message = 'Registro del vecino ha fallado';
       response.data = null;
     }
@@ -301,14 +315,14 @@ async function create(_neighbor) {
     response.status = 0;
 
     if (error instanceof UniqueConstraintError) {
-      console.log(error);
-      response.message = 'Esta insertando un vecino cuya cedula ya existe';
+      response.message = 'Esta insertando datos que ya existen';
     } else {
       response.message =
         'Ha ocurrido un error durante el registro en la base de datos';
     }
 
-    response.data = error;
+    response.data = null;
+
     return response;
   }
 }
